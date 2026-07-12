@@ -4,8 +4,9 @@ export const refreshTokens = async () => {
 
   if (!token || !refreshToken) return false;
 
+  const API_URL = process.env.REACT_APP_API_URL
   try {
-    const response = await fetch(`https://localhost:7064/Client/refresh`, {
+    const response = await fetch(`${API_URL}/Client/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ accessToken: token, refreshToken: refreshToken })
