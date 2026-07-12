@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Microsoft.EntityFrameworkCore;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
 using System;
 using System.Text;
 
@@ -72,7 +72,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<MyDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+    options.UseNpgsql(connectionString);
 });
 
 builder.Services.AddScoped<ClientService>();
