@@ -152,7 +152,15 @@ export default function Catalog(){
           {sortedProducts.map(product => (
             <div onClick={() => navigate(`/product/${product.id}`)} key={product.id} className="animate-fade-in group border bg-black border-white/5 p-4 hover:border-white/25 transition-all duration-500 cursor-pointer">
               <div className="overflow-hidden aspect-[3/4] flex items-center justify-center">
-                <img className='w-full bg-[#0d0d0d] group-hover:scale-105 transition-all duration-700 object-contain' src={product.imageURL} alt={product.name} />
+                <img 
+                  className='w-full bg-[#0d0d0d] group-hover:scale-105 transition-all duration-700 object-contain' 
+                  src={product.imageURL} 
+                  alt={product.name}
+                  // Откладывает загрузку, пока пользователь не доскроллит до карточки
+                  loading="lazy" 
+                  // Декодирует картинку асинхронно, не тормозя интерфейс
+                  decoding="async" 
+                />                
               </div>
               <div className='flex text-white justify-between'>
                 <h2 className='uppercase tracking-[0.2em] font-light'>{product.name}</h2>
