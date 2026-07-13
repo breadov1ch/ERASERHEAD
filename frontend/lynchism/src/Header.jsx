@@ -1,46 +1,73 @@
 import React from 'react';
-// Импортируем нужные иконки
-import { 
-  MagnifyingGlassIcon, 
-  UserIcon, 
-  ShoppingBagIcon 
-} from '@heroicons/react/24/outline';
-import {Link} from 'react-router-dom';
+import { UserIcon, ShoppingBagIcon } from '@heroicons/react/24/outline';
+import { Link, useLocation } from 'react-router-dom';
 
 const Header = ({ cartCount }) => {
+  // Хук для отслеживания активной страницы (чтобы подсвечивать Home, Catalog или About)
+  const location = useLocation();
+
+  const navItems = [
+    { name: 'Home', path: '/' },
+    { name: 'Catalog', path: '/catalog' },
+    { name: 'About', path: '/about' },
+  ];
+
   return (
-    <>
-    <div className='flex bg-[#1a1a1a] p-4 justify-between items-center'>
-      <div className='flex h-full items-stretch'>
-        <Link to="/" className="text-white text-3xl font-[700] tracking-[0.03em] uppercase cursor-pointer">        
+    <header className="sticky top-0 z-50 flex items-center justify-between bg-[#0a0a0a] px-6 py-4 border-b border-zinc-900 backdrop-blur-md bg-opacity-95 select-none">
+      
+      {/* ЛЕВАЯ ЧАСТЬ: Логотип и Навигация */}
+      <div className="flex items-center gap-12">
+        <Link 
+          to="/" 
+          className="text-white text-2xl font-black tracking-[0.08em] uppercase transition-opacity hover:opacity-80"
+        >
           Eraserhead
         </Link>
-        <div className='flex items-center items-stretch text-white gap-7 ml-10 font-medium uppercase text-zinc-400 text-[13px] tracking-[0.01em] cursor-pointer'>
-          <Link to="/" className='flex hover:text-zinc-200 items-center px-2'>Home</Link>
-          <Link to="/catalog" className='flex hover:text-zinc-200 items-center px-2'>Catalog</Link>
-          <Link to="/about" className='flex hover:text-zinc-200 items-center px-2'>About</Link>
-        </div>
+        
+        <nav className="flex items-center gap-8 text-[11px] font-semibold tracking-[0.15em] uppercase">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`transition-colors duration-300 ${
+                  isActive ? 'text-white border-b border-white pb-1' : 'text-zinc-500 hover:text-zinc-200'
+                }`}
+              >
+                {item.name}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
-      
 
-      <div className="flex items-center gap-5">
-        <button className="text-gray-400 hover:text-white transition-colors">
-            <Link to="/profile">
-              <UserIcon className="w-6 h-6 stroke-[1.5]" />
-            </Link>
-            
-        </button>
+      {/* ПРАВАЯ ЧАСТЬ: Профиль и Корзина */}
+      <div className="flex items-center gap-6">
+        <Link 
+          to="/profile" 
+          className="text-zinc-400 hover:text-white transition-colors duration-300 p-1"
+          aria-label="Profile"
+        >
+          <UserIcon className="w-5 h-5 stroke-[1.2]" />
+        </Link>
 
-        <Link to="/cart" className="relative flex items-center group cursor-pointer text-gray-400 hover:text-white transition-colors mr-4">
-            <ShoppingBagIcon className="w-6 h-6 stroke-[1.5]" />
-            {cartCount > 0 && (
-            <span className="ml-2 text-[11px] font-bold">{cartCount}</span>
-            )}
+        <Link 
+          to="/cart" 
+          className="relative flex items-center text-zinc-400 hover:text-white transition-colors duration-300 p-1"
+          aria-label="Cart"
+        >
+          <ShoppingBagIcon className="w-5 h-5 stroke-[1.2]" />
+          
+          {cartCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[9px] font-black text-black scale-90 animate-fade-in">
+              {cartCount}
+            </span>
+          )}
         </Link>
       </div>
-    </div>
-    <div className="border-t border-white/10 w-full bg-black"></div>
-    </>
+
+    </header>
   );
 };
 
