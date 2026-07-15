@@ -24,8 +24,19 @@ export default function OrderPostPage({removeItem}){
   const shipping = 0;
   const tax = subtotal * 0.08; 
   const total = subtotal + tax;
+  const isFormValid = Boolean(
+    phoneNumber.trim() &&
+    firstName.trim() &&
+    lastName.trim() &&
+    country.trim() &&
+    zip.trim() &&
+    adress.trim() &&
+    paymentMethod.trim() &&
+    cartItems.length > 0
+  );
 
   const fetchConfirmOrder = async () => {
+    if (!isFormValid) return;
     const token = localStorage.getItem("access_token");
     if (!token) return navigate("/login");
 
@@ -208,7 +219,11 @@ export default function OrderPostPage({removeItem}){
             </div>
 
             <div className="w-full mt-5">
-              <button onClick={fetchConfirmOrder} className="w-full bg-white text-black py-6 uppercase text-[12px] tracking-[0.3em] font-bold hover:bg-zinc-200 transition-all">
+              <button
+                onClick={fetchConfirmOrder}
+                disabled={!isFormValid}
+                className={`w-full py-6 uppercase text-[12px] tracking-[0.3em] font-bold transition-all ${isFormValid ? 'bg-white text-black hover:bg-zinc-200' : 'bg-zinc-700 text-zinc-400 cursor-not-allowed'}`}
+              >
                 CONFIRM ORDER
               </button>
               

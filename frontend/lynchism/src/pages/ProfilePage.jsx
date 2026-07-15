@@ -102,7 +102,7 @@ export default function ProfilePage() {
         </div>
         <div className="mt-5 text-center">
           <h1 className="font-black tracking-[0.2em] text-white text-5xl uppercase mb-4">
-            HI, {user.name || 'DANYLO'}
+            HI, {user.name}
           </h1>
           <div className="flex flex-col items-center gap-2">
             <p className="font-mono uppercase tracking-[0.4em] text-zinc-500 text-[11px]">

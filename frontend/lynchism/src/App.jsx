@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { refreshTokens } from './api'; // Импортируем из твоего api.js
-
+import ScrollToTop from './ScrollToTop';
 
 // Стили
 import './App.css';
@@ -74,6 +74,7 @@ function App() {
   return (
     <BrowserRouter>
       <Header cartCount={cartItemsCount} />
+      <ScrollToTop />
       <Routes>
         <Route path='/' element={<Home />} />
         <Route path='/catalog' element={<Catalog />} />

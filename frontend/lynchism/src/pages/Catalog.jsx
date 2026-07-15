@@ -70,10 +70,6 @@ export default function Catalog(){
 
 
 
-  if (loading) {
-    console.log("loading...")
-    return <h1 className="loader">downloading products...</h1>;
-  }
   const filteredProducts = products.filter((product) => {
     const isPriceOk = product.price >= value[0] && product.price <= value[1];
     const isCategoryOk = category === "" || product.category === category || category === "All";
@@ -125,7 +121,7 @@ export default function Catalog(){
             </div>
             <div className='flex flex-col text-white min-w-[200px] ml-auto'>
               <div className='flex flex-col text-white mr-20'>
-                <span className='text-zinc-500 uppercase tracking-[0.15em] font-medium text-[11px] mb-1'>Price range: <b>[{value[0]}-{value[1]}]</b></span>
+                <span className='text-zinc-500 uppercase tracking-[0.15em] font-medium text-[11px] mb-1'>Price range: <b>[{value[0]}$-{value[1]}$]</b></span>
                 <Box sx={{ width: 200}}>
                   <Slider
                     getAriaLabel={() => 'Temperature range'}
@@ -135,7 +131,7 @@ export default function Catalog(){
                     getAriaValueText={valuetext}
                     min={0}
                     max={10000} 
-                    step={50}
+                    step={100}
                   />
                 </Box>
               </div>
@@ -149,45 +145,65 @@ export default function Catalog(){
         
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-stretch">
-          {sortedProducts.map(product => (
-            <div onClick={() => navigate(`/product/${product.id}`)} key={product.id} className="animate-fade-in group border bg-black border-white/5 p-4 hover:border-white/25 transition-all duration-500 cursor-pointer">
-              <div className="overflow-hidden aspect-[3/4] flex items-center justify-center">
-                <img 
-                  className='w-full bg-[#0d0d0d] group-hover:scale-105 transition-all duration-700 object-contain' 
-                  src={product.imageURL} 
-                  alt={product.name}
-                  // Откладывает загрузку, пока пользователь не доскроллит до карточки
-                  loading="lazy" 
-                  // Декодирует картинку асинхронно, не тормозя интерфейс
-                  decoding="async" 
-                />                
+          {loading ? (
+            // ПОКА ГРУЗИТСЯ: Выводим 8 аккуратных скелетонов под стиль твоего сайта
+            Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="border bg-black border-white/5 p-4 animate-pulse">
+                {/* Заглушка под картинку */}
+                <div className="aspect-[3/4] bg-zinc-900 w-full mb-4"></div>
+                {/* Заглушка под название и цену */}
+                <div className="flex justify-between items-center mb-2">
+                  <div className="h-3 bg-zinc-800 w-2/3 rounded-sm"></div>
+                  <div className="h-3 bg-zinc-800 w-12 rounded-sm"></div>
+                </div>
+                {/* Заглушка под категорию */}
+                <div className="h-2.5 bg-zinc-900 w-1/3 rounded-sm mb-4"></div>
+                {/* Заглушка под размеры */}
+                <div className="mt-4 pt-4 border-t border-white/10 flex gap-2">
+                  <div className="h-2 w-10 bg-zinc-900 rounded-sm"></div>
+                  <div className="h-2 w-4 bg-zinc-800 rounded-sm"></div>
+                  <div className="h-2 w-4 bg-zinc-800 rounded-sm"></div>
+                </div>
               </div>
-              <div className='flex text-white justify-between'>
-                <h2 className='uppercase tracking-[0.2em] font-light'>{product.name}</h2>
-                <span className='font-mono text-sm'>${product.price}</span>
+            ))
+          ) : (
+            // КОГДА ЗАГРУЗИЛОСЬ: Твой оригинальный рабочий код вывода товаров
+            sortedProducts.map(product => (
+              <div onClick={() => navigate(`/product/${product.id}`)} key={product.id} className="animate-fade-in group border bg-black border-white/5 p-4 hover:border-white/25 transition-all duration-500 cursor-pointer">
+                <div className="overflow-hidden aspect-[3/4] flex items-center justify-center">
+                  <img 
+                    className='w-full bg-[#0d0d0d] group-hover:scale-105 transition-all duration-700 object-contain' 
+                    src={product.imageURL} 
+                    alt={product.name}
+                    loading="lazy" 
+                    decoding="async" 
+                  />                
+                </div>
+                <div className='flex text-white justify-between'>
+                  <h2 className='uppercase tracking-[0.2em] font-light'>{product.name}</h2>
+                  <span className='font-mono text-sm'>${product.price}</span>
+                </div>
+                <span className='text-[10px] text-zinc-600 uppercase mt-1 tracking-widest'>{product.category}</span>
+                <div className='mt-4 pt-4 border-t border-white/10 flex gap-2'>
+                  <span className='text-[9px] text-zinc-700 uppercase tracking-tighter'>Available:</span>
+                  {product.sizes && product.sizes.length > 0 ? (
+                      product.sizes
+                        .filter(s => s.quantity > 0)
+                        .map(s => (
+                          <span key={s.id} className='text-[9px] text-zinc-400 uppercase font-bold px-1'>
+                            {s.size}
+                          </span>
+                        ))
+                      ) : (
+                        <span className='text-[9px] text-red-900 uppercase'>Sold Out</span>
+                      )}
+                    {product.sizes && product.sizes.filter(s => s.quantity > 0).length === 0 && (
+                      <span className='text-[9px] text-red-900 uppercase'>Sold Out</span>
+                    )}
+                </div>
               </div>
-              <span className='text-[10px] text-zinc-600 uppercase mt-1 tracking-widest'>{product.category}</span>
-              <div className='mt-4 pt-4 border-t border-white/10 flex gap-2'>
-                <span className='text-[9px] text-zinc-700 uppercase tracking-tighter'>Available:</span>
-                {product.sizes && product.sizes.length > 0 ? (
-                    product.sizes
-                      .filter(s => s.quantity > 0)
-                      .map(s => (
-                        <span key={s.id} className='text-[9px] text-zinc-400 uppercase font-bold px-1'>
-                          {s.size}
-                        </span>
-                      ))
-                    ) : (
-                      <span className='text-[9px] text-red-900 uppercase'>Sold Out</span> // если вообще размеров нету
-                    
-                  )}
-                  {product.sizes && product.sizes.filter(s => s.quantity > 0).length === 0 && (
-                    <span className='text-[9px] text-red-900 uppercase'>Sold Out</span>
-                  )}
-              </div>
-            </div>
-            
-          ))}
+            ))
+          )}
         </div>
       </div>
     </>

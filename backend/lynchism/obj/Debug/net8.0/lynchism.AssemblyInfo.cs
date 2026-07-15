@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("lynchism")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+557365813a90f2bb77a67f42aa3fc12a314768f3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2d35b5ebdf021498ea11ce903db753f7d1e6c713")]
 [assembly: System.Reflection.AssemblyProductAttribute("lynchism")]
 [assembly: System.Reflection.AssemblyTitleAttribute("lynchism")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

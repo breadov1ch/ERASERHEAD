@@ -11,14 +11,3 @@ html, body {
 body::-webkit-scrollbar {
   display: none !important;
 }
-
-/* В index.css */
-@keyframes flash-white {
-  0% { background-color: white; color: black; }
-  50% { background-color: #333 !important; color: white !important; }
-  100% { background-color: white; color: black; }
-}
-
-.animate-flash {
-  animation: flash-white 0.2s ease-in-out !important;
-}

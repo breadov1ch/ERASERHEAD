@@ -22,7 +22,7 @@ export default function ProductPage({ updateCart }){
   },[id])
   const addToCart = async (e) => {
     e.preventDefault()
-
+    setShowModal(true);
     try{
       var token = localStorage.getItem("access_token")
       if(token == null) navigate("/login")
@@ -56,7 +56,7 @@ export default function ProductPage({ updateCart }){
       else{
         console.log(product)
         updateCart();
-        setShowModal(true);
+        
         updateCart();
       }
     }
@@ -76,7 +76,7 @@ export default function ProductPage({ updateCart }){
         <div className='flex text-white flex-col mt-10'>
           <span className='lg:text-[62px] font-bold uppercase text-white tracking-tighter leading-[0.9]'>{product?.name}</span>
           <span className='font-mono text-zinc-300 text-base md:text-xl tracking-tight mt-3 lg:text-[20px]'>${product?.price}.00</span>
-          <span className='text-zinc-400 text-[12px] max-w-[280px] md:mt-1 lg:mt-10'>Oversized silhouette. Heavyweight 300GSM cotton. Raw hem finish. Conceptualized for the monolithic void. Engineered for architectural layering.</span>
+          <span className='text-zinc-400 text-[12px] max-w-[280px] md:mt-1 lg:mt-10'>{product?.description}</span>
           <div className='flex mt-8 lg:max-w-[290px] border-b border-white/10 pb-1 w-full justify-between'>
             <span className='font-medium text-zinc-500 text-[10px] tracking-[0.1em] uppercase'>SILHOUETTE</span>
             <span className='font-bold text-white text-[10px] tracking-[0.1em] uppercase'>OVERSIZED</span>
