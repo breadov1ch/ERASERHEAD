@@ -144,7 +144,7 @@ export default function ProfilePage() {
                 className="border border-zinc-900 p-6 flex justify-between items-center hover:bg-[#111] transition-all"
               >
                 <div>
-                  <span className="text-cyan-500 font-bold block mb-1">
+                  <span className=" font-bold block mb-1">
                     #{order.id.toString().padStart(6, '0')}
                   </span>
                   <span className="text-[10px] text-zinc-600 uppercase">{order.date}</span>

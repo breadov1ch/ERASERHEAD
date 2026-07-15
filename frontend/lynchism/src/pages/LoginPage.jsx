@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import loadingGif1 from '../assets/loading.gif';
 const API_URL = process.env.REACT_APP_API_URL;
 
 export default function LoginPage(){
+  const loadingGif2 = 'https://usagif.com/wp-content/uploads/loading-44.gif';
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const loginUser = async (e) => {
     e.preventDefault();
     setError("");
+    setIsSubmitting(true);
     try{
       const response = await fetch(`${API_URL}/Client/login`, {
         method: "POST",
@@ -33,9 +36,11 @@ export default function LoginPage(){
 
       console.log({"access_token": localStorage.getItem("access_token"), "refresh_token": localStorage.getItem("refresh_token")})
       navigate("/");
+      setIsSubmitting(false);
     }
     catch(err){
       setError(err.message)
+      setIsSubmitting(false);
     }
   }
 
@@ -81,8 +86,16 @@ export default function LoginPage(){
               {error}
             </span>
           )}
-          <button className="w-full bg-white text-black py-4 uppercase font-medium tracking-[0.3em] text-xs hover:bg-zinc-200 transition-colors mt-20">
-            Authenticate
+          <button 
+            type="submit" 
+            className="w-full bg-white text-black py-4 uppercase font-medium tracking-[0.3em] text-xs hover:bg-zinc-200 transition-colors mt-20 flex items-center justify-center"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+                <img src={loadingGif1} className="w-6 h-6" alt="Loading..." />
+              ) : 
+              "Authenticate"
+             }
           </button>
           <div className="flex justify-between items-center pt-2">
           <span className="text-zinc-600 text-[9px] font-bold uppercase tracking-widest cursor-pointer hover:text-zinc-400">

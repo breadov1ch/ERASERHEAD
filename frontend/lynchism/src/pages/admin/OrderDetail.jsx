@@ -64,13 +64,13 @@ export default function OrderDetail(){
         <h1 className="text-white text-1xl font-black tracking-[0.5em] uppercase mb-10 border-b border-zinc-900 pb-4">
           VOID_CONTROL // <Link to="/admin">ORDERS</Link> // ORDER#{id}
         </h1>
-        <div className='w-full flex justify-center '>
-          <div className='w-1/2 min-h-screen flex'>
+        <div className='w-full flex justify-center'>
+          <div className='w-full max-w-6xl flex flex-col lg:flex-row gap-6'>
             <div className="w-full">
               {products.map((item) => (
-                <div key={item.id} className='flex text-white my-2 border border-zinc-900 p-3 hover:border-zinc-600'>
-                  <div>
-                    <img src={item.product?.imageURL} className='w-[200px] '></img>
+                <div key={item.id} className='flex flex-col lg:flex-row text-white my-2 border border-zinc-900 p-3 hover:border-zinc-600 gap-4'>
+                  <div className='w-full lg:w-[200px] shrink-0'>
+                    <img src={item.product?.imageURL} className='w-full h-auto object-cover rounded-sm' alt={item.product?.name} />
                   </div>
                   <div className='flex flex-col justify-between w-full'>
                     <div className='flex justify-between w-full'>
@@ -91,8 +91,8 @@ export default function OrderDetail(){
                 </div>
               ))}
             </div>
-            <div className='sticky top-20'>
-              <div className='p-6 border border-zinc-900 mt-2 mx-2 h-min py-10 '>
+            <div className='w-full lg:w-[360px]'>
+              <div className='p-6 border border-zinc-900 mt-2 mx-0 lg:mx-2 h-min py-10'>
                 <div className='text-zinc-300 border-b border-zinc-900 mb-5 pb-5'>
                   <p className='text-zinc-500 tracking-[0.2em] mb-3'>SHIPPING_ADDRESS</p>
                   <div className='pl-3'>

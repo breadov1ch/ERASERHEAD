@@ -66,16 +66,16 @@ export default function AdminPanel() {
         VOID_CONTROL // ORDERS
       </h1>
 
-      <div className='w-full flex items-center justify-center'>
-        <div className="w-1/2 border border-zinc-900 overflow-hidden ">
-          <div className="flex justify-between items-center border-t border-zinc-900 p-4 text-[9px] text-zinc-500">
-            <button onClick={() => setPage(p => p - 1)} disabled={page === 1} className="hover:text-white uppercase tracking-widest">Prev</button>
-              <span className='text-zinc-300 font-mono text-sm'>
+      <div className='w-full flex justify-center'>
+        <div className="w-full max-w-6xl border border-zinc-900 overflow-hidden">
+          <div className="flex flex-col sm:flex-row justify-between items-center border-t border-zinc-900 p-4 text-[9px] text-zinc-500 gap-4">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="hover:text-white uppercase tracking-widest">Prev</button>
+            <span className='text-zinc-300 font-mono text-sm flex items-center gap-2'>
                 <input 
-                className='w-[50px] bg-transparent  outline-none placeholder:text-zinc-700 border-b border-zinc-700 p-2' 
+                className='w-[50px] bg-transparent outline-none placeholder:text-zinc-700 border-b border-zinc-700 p-2' 
                 value={page} 
-                onChange={(e) => setPage(parseInt(e.target.value))} /> / {totalPages}</span>
-            <button onClick={() => setPage(p => p + 1)} disabled={page >= totalPages} className="hover:text-white uppercase tracking-widest">Next</button>
+                onChange={(e) => setPage(Number(e.target.value) || 1)} /> / {totalPages}</span>
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="hover:text-white uppercase tracking-widest">Next</button>
           </div>
           <table className="w-full text-left text-[11px] uppercase tracking-tighter">
             <thead>

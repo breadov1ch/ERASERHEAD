@@ -123,7 +123,7 @@ export default function CartPage({removeItem}){
           </div>
         </div>
         <div className='lg:flex gap-5 w-full lg:px-20 mt-5'>
-          <div className='text-black p-5 flex-grow min-h-[400px]'>
+          <div className='text-black flex-grow min-h-[400px]'>
             {loading ? (
               // ПОКА ИДЕТ ЗАГРУЗКА: Рисуем красивые скелетоны для корзины
               Array.from({ length: 2 }).map((_, index) => (
@@ -209,7 +209,7 @@ export default function CartPage({removeItem}){
             )}
           </div>
 
-          <div className='bg-[#141414] text-zinc-200 mt-7 ml-10 p-10 lg:w-[450px] h-[600px] border border-zinc-900 flex flex-col justify-between sticky top-10'>
+          <div className='bg-[#141414] text-zinc-200 mt-2 p-10 lg:w-[550px] h-[600px] border border-zinc-900 flex flex-col justify-between sticky top-10'>
             <div>
               <h2 className="uppercase text-[22px] tracking-[0.1em] font-medium mb-12">Order summary</h2>
 

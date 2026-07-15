@@ -117,9 +117,9 @@ export default function OrderPostPage({removeItem}){
 
   return (
     <>
-      <div className='bg-[#0f0f0f] min-h-screen lg:p-10 lg:px-40'>
-        <div className='lg:flex justify-center'>
-          <div className='m-3 text-white'>
+      <div className='bg-[#0f0f0f] min-h-screen p-5 lg:p-10 lg:px-40'>
+        <div className='flex flex-col lg:flex-row justify-center gap-8 lg:gap-10'>
+          <div className='m-3 text-white max-w-4xl w-full'>
             <div className='tracking-[0.25em] font-medium text-1xl text-zinc-300'>01. CONTACT INFO</div>
             <div className='pl-4 m-2'>
               <p className='text-zinc-500 uppercase tracking-[0.15em] font-medium text-[11px] mb-1'>PHONE NUMBER</p>
@@ -127,36 +127,36 @@ export default function OrderPostPage({removeItem}){
             </div>
             <div className='tracking-[0.25em] font-medium text-1xl text-zinc-300 mt-5'>02. SHIPPING ADDRESS</div>
             <div className='pl-4 m-2'>
-              <div className='flex gap-3'>
-                <div>
+              <div className='flex flex-col lg:flex-row gap-3'>
+                <div className='w-full'>
                   <p className='text-zinc-500 uppercase tracking-[0.15em] font-medium text-[11px] mb-1'>FIRST NAME</p>
-                  <input value={firstName} onChange={(e) => setFirstName(e.target.value)}className='font-mono placeholder:text-zinc-500 appearance-none pl-2 p-0.5 bg-[#1c1c1c] outline-none decoration-none' placeholder=' ' required/>
+                  <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className='w-full font-mono placeholder:text-zinc-500 appearance-none pl-2 p-0.5 bg-[#1c1c1c] outline-none decoration-none' placeholder=' ' required/>
                 </div>
-                <div>
+                <div className='w-full'>
                   <p className='text-zinc-500 uppercase tracking-[0.15em] font-medium text-[11px] mb-1'>LAST NAME</p>
-                  <input value={lastName} onChange={(e) => setLastName(e.target.value)} type="text" className='font-mono placeholder:text-zinc-500 appearance-none pl-2 p-0.5 bg-[#1c1c1c] outline-none decoration-none' placeholder=' ' required/>
+                  <input value={lastName} onChange={(e) => setLastName(e.target.value)} type="text" className='w-full font-mono placeholder:text-zinc-500 appearance-none pl-2 p-0.5 bg-[#1c1c1c] outline-none decoration-none' placeholder=' ' required/>
                 </div>
               </div>
-              <div className='flex gap-3 mt-3'>
-                <div>
+              <div className='flex flex-col lg:flex-row gap-3 mt-3'>
+                <div className='w-full'>
                   <p className='text-zinc-500 uppercase tracking-[0.15em] font-medium text-[11px] mb-1'>COUNTRY, CITY</p>
-                  <input value={country} onChange={(e) => setCountry(e.target.value)} className='w-[350px] font-mono placeholder:text-zinc-500 appearance-none pl-2 p-0.5 bg-[#1c1c1c] outline-none decoration-none' placeholder=' ' required/>
+                  <input value={country} onChange={(e) => setCountry(e.target.value)} className='w-full lg:w-[350px] font-mono placeholder:text-zinc-500 appearance-none pl-2 p-0.5 bg-[#1c1c1c] outline-none decoration-none' placeholder=' ' required/>
                 </div>
-                <div>
+                <div className='w-full lg:w-[50px]'>
                   <p className='text-zinc-500 uppercase tracking-[0.15em] font-medium text-[11px] mb-1'>ZIP</p>
-                  <input value={zip} onChange={(e) => setZip(e.target.value)} type="text"  className='w-[50px] font-mono placeholder:text-zinc-500 appearance-none pl-2 p-0.5 bg-[#1c1c1c] outline-none decoration-none' placeholder=' ' required/>
+                  <input value={zip} onChange={(e) => setZip(e.target.value)} type="text"  className='w-full font-mono placeholder:text-zinc-500 appearance-none pl-2 p-0.5 bg-[#1c1c1c] outline-none decoration-none' placeholder=' ' required/>
                 </div>
               </div>
               <div className='mt-3'>
                   <p className='text-zinc-500 uppercase tracking-[0.15em] font-medium text-[11px] mb-1'>STREET ADRESS</p>
-                  <input value={adress} onChange={(e) => setAdress(e.target.value)} type="text"className='w-[410px] font-mono placeholder:text-zinc-500 appearance-none pl-2 p-0.5 bg-[#1c1c1c] outline-none decoration-none' placeholder=' ' required/>
+                  <input value={adress} onChange={(e) => setAdress(e.target.value)} type="text" className='w-full lg:w-[410px] font-mono placeholder:text-zinc-500 appearance-none pl-2 p-0.5 bg-[#1c1c1c] outline-none decoration-none' placeholder=' ' required/>
               </div>
             </div>
             <div className='tracking-[0.25em] font-medium text-1xl text-zinc-300 mt-5'>03. PAYMENT METHOD</div>
-            <div className='pl-4 m-2 max-w-[410px]'>
+            <div className='pl-4 m-2 max-w-full'>
               <p className='text-zinc-500 uppercase tracking-[0.15em] font-medium text-[11px] mb-1'>PAYMENT METHOD</p>
-              <div className='flex flex-col text-white mr-[60px]'>
-                <select onChange={(e) => setPaymentMethod(e.target.value)} className='bg-black text-white w-[410px] p-1 outline-none font-bold text-[15px] tracking-wide cursor-pointer bg-[#1c1c1c]'
+              <div className='flex flex-col text-white'>
+                <select onChange={(e) => setPaymentMethod(e.target.value)} className='bg-black text-white w-full lg:w-[410px] p-1 outline-none font-bold text-[15px] tracking-wide cursor-pointer bg-[#1c1c1c]'
                   >
                   <option value="Google Pay">Google Pay</option>
                   <option value="Visa">Visa</option>
@@ -166,7 +166,7 @@ export default function OrderPostPage({removeItem}){
               </div>
             </div>
           </div>
-          <div className='bg-[#141414] text-zinc-200 ml-10 p-10 lg:w-[450px] border border-zinc-900 flex flex-col justify-between sticky top-10'>
+          <div className='bg-[#141414] text-zinc-200 mt-8 lg:mt-0 lg:ml-10 p-8 lg:p-10 w-full lg:w-[450px] border border-zinc-900 flex flex-col justify-between lg:sticky lg:top-10'>
             <div>
               <h2 className="uppercase text-[22px] tracking-[0.1em] font-medium mb-12">Order summary</h2>
 
