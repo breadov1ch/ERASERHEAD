@@ -1,4 +1,4 @@
-﻿namespace lynchism.Models
+namespace lynchism.Models
 {
     public class Order
     {
@@ -18,6 +18,13 @@
         public string StreetAddress { get; set; } = null!;
         public string ZipCode { get; set; } = null!;
 
+        public string Carrier { get; set; } = "Nova Poshta";
+        public string DeliveryType { get; set; } = "Warehouse";
+        public string? DeliveryBranch { get; set; }
+        public string? DeliveryCity { get; set; }
+        public decimal DeliveryCost { get; set; } = 0;
+        public string? PromoCode { get; set; }
+        public decimal DiscountSum { get; set; } = 0;
 
         public List<OrderItem> Products { get; set; } = new();
     }

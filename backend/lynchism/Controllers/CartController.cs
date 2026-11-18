@@ -1,4 +1,4 @@
-﻿using lynchism.Models;
+using lynchism.Models;
 using lynchism.DTO;
 using lynchism.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -17,6 +17,8 @@ namespace lynchism.Controllers
         {
             _cartService = cartService;
         }
+
+        [Authorize]
         [HttpPost("add-to-cart")]
         public async Task<ActionResult> AddToCart([FromBody] AddToCartDTO dto)
         {
@@ -27,8 +29,9 @@ namespace lynchism.Controllers
             {
                 ClientId = clientId,
                 ProductId = dto.ProductId,
-                Quantity = dto.Quantity,
+                Quantity = dto.Quantity > 0 ? dto.Quantity : 1,
                 Size = dto.Size,
+                Color = dto.Color ?? string.Empty,
                 AddedDate = DateTime.UtcNow
             };
 
@@ -36,6 +39,34 @@ namespace lynchism.Controllers
             if (result == null) return BadRequest("Product or size is incorrect");
             return Ok("Товар добавлен в корзину");
         }
+
+        [Authorize]
+        [HttpPost("merge-cart")]
+        public async Task<ActionResult> MergeCart([FromBody] List<AddToCartDTO> guestItems)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userId, out int clientId)) return Unauthorized();
+
+            if (guestItems != null && guestItems.Any())
+            {
+                foreach (var dto in guestItems)
+                {
+                    var item = new CartItem
+                    {
+                        ClientId = clientId,
+                        ProductId = dto.ProductId,
+                        Quantity = dto.Quantity > 0 ? dto.Quantity : 1,
+                        Size = dto.Size,
+                        Color = dto.Color ?? string.Empty,
+                        AddedDate = DateTime.UtcNow
+                    };
+                    await _cartService.AddToCart(item);
+                }
+            }
+
+            return Ok("Корзина успешно синхронизирована");
+        }
+
         [Authorize]
         [HttpGet("get-cart")]
         public async Task<ActionResult<List<CartItemDTO>>> GetCartByClient()
@@ -48,6 +79,7 @@ namespace lynchism.Controllers
             List<CartItemDTO> cartItems = await _cartService.GetCartByClientId(id);
             return Ok(cartItems);
         }
+
         [Authorize]
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteCart(int id)
@@ -56,6 +88,7 @@ namespace lynchism.Controllers
             if (result) return Ok();
             return BadRequest();
         }
+
         [Authorize]
         [HttpPut("change-quantity")]
         public async Task<ActionResult<CartItem>> ChangeQuantity(int id, int quantity)
@@ -64,6 +97,7 @@ namespace lynchism.Controllers
             if(cartItem != null) return Ok(cartItem);
             return BadRequest();
         }
+
         [Authorize]
         [HttpGet("get-cartItem-count")]
         public async Task<ActionResult<int>> GetCartItemCount()

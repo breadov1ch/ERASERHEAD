@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using lynchism.Models;
 
 namespace lynchism
@@ -13,5 +13,6 @@ namespace lynchism
         public DbSet<CartItem> CartItems { get; set; }      
         public DbSet<Order> Orders { get; set; }            
         public DbSet<OrderItem> OrderItems { get; set; }   
+        public DbSet<PromoCode> PromoCodes { get; set; }      
     }
 }

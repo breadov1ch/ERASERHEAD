@@ -1,7 +1,8 @@
-﻿using lynchism.DTO;
+using lynchism.DTO;
 using lynchism.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Drawing;
+
 namespace lynchism.Services
 {
     public class ProductService
@@ -12,29 +13,84 @@ namespace lynchism.Services
         {
             _context = context;
         }
+
+        private void EnsureImagesAndAttributes(Product product)
+        {
+            if (product.Images == null)
+            {
+                product.Images = new List<string>();
+            }
+
+            if (!product.Images.Any() && !string.IsNullOrWhiteSpace(product.ImageURL))
+            {
+                product.Images.Add(product.ImageURL);
+            }
+            else if (product.Images.Any() && string.IsNullOrWhiteSpace(product.ImageURL))
+            {
+                product.ImageURL = product.Images[0];
+            }
+
+            if (string.IsNullOrWhiteSpace(product.Silhouette)) product.Silhouette = "OVERSIZED";
+            if (string.IsNullOrWhiteSpace(product.Fabric)) product.Fabric = "100% COTTON";
+            if (string.IsNullOrWhiteSpace(product.Gender)) product.Gender = "Unisex";
+        }
+
         public async Task<List<ProductSize>> GetProductSizes(int product_id) => await _context.ProductSizes
             .Where(ps => ps.ProductId == product_id)
             .ToListAsync();
-        public async Task<List<Product>> GetAll() => await _context.Products
-            .Include(p => p.Sizes)
-            .ToListAsync();
-        public async Task<Product?> GetProductById(int id) => await _context.Products
-            .Include(p => p.Sizes)
-            .FirstOrDefaultAsync(p => p.Id == id);
-        public async Task<List<Product>> GetByCategory(string category) => await _context.Products
-            .Include(p => p.Sizes)
-            .Where(p => p.Category == category)
-            .ToListAsync();
+
+        public async Task<List<Product>> GetAll()
+        {
+            var products = await _context.Products
+                .Include(p => p.Sizes)
+                .OrderBy(p => p.Id)
+                .ToListAsync();
+
+            foreach (var p in products)
+            {
+                EnsureImagesAndAttributes(p);
+            }
+            return products;
+        }
+
+        public async Task<Product?> GetProductById(int id)
+        {
+            var product = await _context.Products
+                .Include(p => p.Sizes)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (product != null)
+            {
+                EnsureImagesAndAttributes(product);
+            }
+            return product;
+        }
+
+        public async Task<List<Product>> GetByCategory(string category)
+        {
+            var products = await _context.Products
+                .Include(p => p.Sizes)
+                .Where(p => p.Category == category)
+                .ToListAsync();
+
+            foreach (var p in products)
+            {
+                EnsureImagesAndAttributes(p);
+            }
+            return products;
+        }
+
         public async Task<Product?> AddProduct(Product product)
         {
-            if (product == null)
-            {
-                return null;
-            }
+            if (product == null) return null;
+
+            EnsureImagesAndAttributes(product);
+
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
             return product;
         }
+
         public async Task<Product?> UpdateProduct(ProductDTO product, int id)
         {
             Product? finded_product = await GetProductById(id);
@@ -46,13 +102,30 @@ namespace lynchism.Services
                 finded_product.Price = product.Price;
                 finded_product.Category = product.Category;
                 finded_product.ImageURL = product.ImageURL;
+                finded_product.Images = product.Images ?? new List<string>();
+                finded_product.Silhouette = string.IsNullOrWhiteSpace(product.Silhouette) ? "OVERSIZED" : product.Silhouette;
+                finded_product.Fabric = string.IsNullOrWhiteSpace(product.Fabric) ? "100% COTTON" : product.Fabric;
+                finded_product.Gender = string.IsNullOrWhiteSpace(product.Gender) ? "Unisex" : product.Gender;
+                if (!string.IsNullOrWhiteSpace(product.SizeChartJson))
+                {
+                    finded_product.SizeChartJson = product.SizeChartJson;
+                }
+                finded_product.ColorsJson = product.ColorsJson;
+                finded_product.IsPreOrder = product.IsPreOrder;
 
+                EnsureImagesAndAttributes(finded_product);
+
+                if (product.Sizes != null && product.Sizes.Any())
+                {
+                    await UpdateStock(id, product.Sizes);
+                }
 
                 await _context.SaveChangesAsync();
                 return finded_product;
             }
             return null;
         }
+
         public async Task<List<ProductSize>> UpdateStock(int productId, List<ProductSize> sizes)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -71,6 +144,7 @@ namespace lynchism.Services
                 {
                     _context.ProductSizes.RemoveRange(sizesToDelete);
                 }
+
                 foreach (var incomingSize in sizes)
                 {
                     var existing = dbSizes.FirstOrDefault(db => db.Size == incomingSize.Size);
@@ -102,6 +176,7 @@ namespace lynchism.Services
                 throw;
             }
         }
+
         public async Task<bool> DeleteProduct(int id)
         {
             Product? finded_product = await GetProductById(id);
@@ -110,11 +185,10 @@ namespace lynchism.Services
             await _context.SaveChangesAsync();
             return true;
         }
+
         public async Task<bool> DeleteAll()
         {
-            _context.Products.RemoveRange(_context.Products);
-            _context.ProductSizes.RemoveRange(_context.ProductSizes);
-            await _context.SaveChangesAsync();
+            await _context.Database.ExecuteSqlRawAsync(@"TRUNCATE TABLE ""CartItems"", ""OrderItems"", ""ProductSizes"", ""Products"" CASCADE;");
             return true;
         }
     }

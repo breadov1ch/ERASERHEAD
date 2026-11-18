@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace lynchism.Models
 {
@@ -12,6 +12,7 @@ namespace lynchism.Models
         public Product Product { get; set; } = null!;
         public int Quantity { get; set; }
         public string Size { get; set; }
+        public string Color { get; set; } = string.Empty;
         public DateTime AddedDate { get; set; }
     }
 }
