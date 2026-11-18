@@ -153,21 +153,6 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"DB Schema migration notice: {ex.Message}");
     }
 
-    // Очистка всех товаров по запросу (TRUNCATE) без повторного автозаполнения
-    if (!File.Exists(".purge_done"))
-    {
-        try
-        {
-            await _context.Database.ExecuteSqlRawAsync(@"TRUNCATE TABLE ""CartItems"", ""OrderItems"", ""ProductSizes"", ""Products"" CASCADE;");
-            File.WriteAllText(".purge_done", DateTime.UtcNow.ToString());
-            Console.WriteLine("SYSTEM // ALL PRODUCTS AND CATALOG TRUNCATED PER USER REQUEST.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"DB Truncate notice: {ex.Message}");
-        }
-    }
-
     // Инициализация/обновление администратора olga0669368037@gmail.com
     try
     {
