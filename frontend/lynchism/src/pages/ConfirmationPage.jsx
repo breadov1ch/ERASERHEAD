@@ -9,8 +9,17 @@ export default function ConfirmationPage(){
   const navigate = useNavigate();
   const location = useLocation();
   const { t, lang, loc } = useTranslation();
-  const clientCreated = location.state?.clientCreated;
-  const clientEmail = location.state?.email;
+
+  const savedAccount = (() => {
+    try {
+      return JSON.parse(sessionStorage.getItem("lastOrderAccount") || "{}");
+    } catch {
+      return {};
+    }
+  })();
+
+  const clientCreated = location.state?.clientCreated || savedAccount.clientCreated;
+  const clientEmail = location.state?.email || savedAccount.email;
 
   const searchParams = new URLSearchParams(location.search);
   const isApprovedFromUrl = 
@@ -89,8 +98,7 @@ export default function ConfirmationPage(){
         try {
           await fetch(`${API_URL}/Payment/mark-paid/${id}`, { method: "POST" });
         } catch (e) {}
-        setOrderStatus(isCod ? "Prepaid_Deposit" : "Paid");
-        setPaying(false);
+        window.location.href = `/confirmation/${id}?paid=1&status=Approved`;
       },
       onDeclined: () => {
         setPaying(false);
@@ -99,8 +107,7 @@ export default function ConfirmationPage(){
         try {
           await fetch(`${API_URL}/Payment/mark-paid/${id}`, { method: "POST" });
         } catch (e) {}
-        setOrderStatus(isCod ? "Prepaid_Deposit" : "Paid");
-        setPaying(false);
+        window.location.href = `/confirmation/${id}?paid=1&status=Approved`;
       },
       onError: (err) => {
         alert(err.message || "Помилка при запуску оплати");

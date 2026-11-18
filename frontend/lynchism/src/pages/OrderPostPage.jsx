@@ -9,8 +9,7 @@ import { startWayForPayPayment } from '../wayforpay';
 import DeliverySelector from '../components/DeliverySelector';
 
 export default function OrderPostPage({ removeItem }) {
-  const navigate = useNavigate();
-  const { t, lang, loc } = useTranslation();
+  const { t, loc } = useTranslation();
   const { formatPrice } = useCurrency();
   const [cartItems, setCartItems] = useState([]);
   const [email, setEmail] = useState("");
@@ -263,15 +262,17 @@ export default function OrderPostPage({ removeItem }) {
           if (removeItem) removeItem();
           window.dispatchEvent(new Event("cartUpdated"));
 
-          navigate(`/confirmation/${createdOrderId}?paid=1&status=Approved`, {
-            state: {
-              clientCreated: data.clientCreated,
-              email: data.email,
-              paid: true,
-              isPrepaid: paymentMethod !== "WayForPay",
-              paymentMethod: paymentMethod
+          try {
+            if (data?.clientCreated) {
+              sessionStorage.setItem("lastOrderAccount", JSON.stringify({
+                clientCreated: data.clientCreated,
+                email: data.email
+              }));
             }
-          });
+          } catch (e) { }
+
+          // Принудительный полный переход для очистки виджета WayForPay
+          window.location.href = `/confirmation/${createdOrderId}?paid=1&status=Approved`;
         },
         onDeclined: async () => {
           try {
@@ -292,16 +293,16 @@ export default function OrderPostPage({ removeItem }) {
           if (removeItem) removeItem();
           window.dispatchEvent(new Event("cartUpdated"));
 
-          navigate(`/confirmation/${createdOrderId}?paid=1&status=Approved`, {
-            state: {
-              clientCreated: data.clientCreated,
-              email: data.email,
-              paid: true,
-              pending: true,
-              paymentMethod: paymentMethod,
-              isPrepaid: paymentMethod !== "WayForPay"
+          try {
+            if (data?.clientCreated) {
+              sessionStorage.setItem("lastOrderAccount", JSON.stringify({
+                clientCreated: data.clientCreated,
+                email: data.email
+              }));
             }
-          });
+          } catch (e) { }
+
+          window.location.href = `/confirmation/${createdOrderId}?paid=1&status=Approved`;
         },
         onError: async () => {
           try {

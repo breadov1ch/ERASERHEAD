@@ -73,6 +73,7 @@ namespace lynchism.Controllers
                 sum = order.Sum,
                 firstName = order.FirstName,
                 lastName = order.LastName,
+                email = order.Client?.Email,
                 hasPreOrder = hasPreOrder,
                 preOrderSum = preOrderSum,
                 preOrderDeposit = preOrderDeposit,
