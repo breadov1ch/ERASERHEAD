@@ -38,7 +38,8 @@ export const startWayForPayPayment = async ({
   onError
 }) => {
   try {
-    const res = await fetch(`${API_URL}/Payment/wayforpay-params/${orderId}`);
+    const clientOrigin = typeof window !== 'undefined' && window.location ? window.location.origin : '';
+    const res = await fetch(`${API_URL}/Payment/wayforpay-params/${orderId}?clientUrl=${encodeURIComponent(clientOrigin)}`);
     if (!res.ok) {
       const errText = await res.text();
       throw new Error(errText || "Ошибка при генерации счета WayForPay");

@@ -24,7 +24,7 @@ namespace lynchism.Controllers
         }
 
         [HttpGet("wayforpay-params/{orderId}")]
-        public async Task<ActionResult> GetWayForPayParams(int orderId)
+        public async Task<ActionResult> GetWayForPayParams(int orderId, [FromQuery] string? clientUrl = null)
         {
             var order = await _context.Orders
                 .Include(o => o.Client)
@@ -39,7 +39,34 @@ namespace lynchism.Controllers
 
             var request = HttpContext.Request;
             string baseUrl = $"{request.Scheme}://{request.Host}";
-            string frontendUrl = _config["FrontendUrl"] ?? "http://localhost:3000";
+
+            // Динамически определяем URL фронтенда, чтобы редирект возвращал именно туда, откуда оформляли заказ
+            string frontendUrl = clientUrl;
+            if (string.IsNullOrWhiteSpace(frontendUrl))
+            {
+                string originHeader = request.Headers["Origin"].ToString();
+                string refererHeader = request.Headers["Referer"].ToString();
+
+                if (!string.IsNullOrWhiteSpace(originHeader))
+                {
+                    frontendUrl = originHeader;
+                }
+                else if (!string.IsNullOrWhiteSpace(refererHeader) && Uri.TryCreate(refererHeader, UriKind.Absolute, out var refUri))
+                {
+                    frontendUrl = $"{refUri.Scheme}://{refUri.Authority}";
+                }
+                else
+                {
+                    frontendUrl = _config["FrontendUrl"];
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(frontendUrl))
+            {
+                frontendUrl = $"{request.Scheme}://{request.Host}";
+            }
+
+            frontendUrl = frontendUrl.TrimEnd('/');
 
             var paymentData = _wayForPayService.GeneratePaymentData(order, baseUrl, frontendUrl);
             return Ok(paymentData);
@@ -49,7 +76,34 @@ namespace lynchism.Controllers
         [HttpGet("wayforpay-return")]
         public async Task<IActionResult> WayForPayReturn()
         {
-            string frontendUrl = _config["FrontendUrl"] ?? "http://localhost:3000";
+            string frontParam = Request.Query["front"].ToString();
+            string frontendUrl = !string.IsNullOrWhiteSpace(frontParam) ? frontParam : null;
+
+            if (string.IsNullOrWhiteSpace(frontendUrl))
+            {
+                string originHeader = Request.Headers["Origin"].ToString();
+                string refererHeader = Request.Headers["Referer"].ToString();
+
+                if (!string.IsNullOrWhiteSpace(originHeader))
+                {
+                    frontendUrl = originHeader;
+                }
+                else if (!string.IsNullOrWhiteSpace(refererHeader) && Uri.TryCreate(refererHeader, UriKind.Absolute, out var refUri))
+                {
+                    frontendUrl = $"{refUri.Scheme}://{refUri.Authority}";
+                }
+                else
+                {
+                    frontendUrl = _config["FrontendUrl"];
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(frontendUrl))
+            {
+                frontendUrl = $"{Request.Scheme}://{Request.Host}";
+            }
+
+            frontendUrl = frontendUrl.TrimEnd('/');
             string orderRef = "";
             string status = "";
 

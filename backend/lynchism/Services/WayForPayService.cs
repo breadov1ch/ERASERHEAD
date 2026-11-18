@@ -156,7 +156,7 @@ namespace lynchism.Services
             string merchantSignature = ComputeHmacMd5(signString, MerchantSecretKey);
 
             string serviceUrl = $"{baseUrl.TrimEnd('/')}/Payment/wayforpay-callback";
-            string returnUrl = $"{baseUrl.TrimEnd('/')}/Payment/wayforpay-return?orderId={order.Id}";
+            string returnUrl = $"{baseUrl.TrimEnd('/')}/Payment/wayforpay-return?orderId={order.Id}&front={Uri.EscapeDataString(frontendUrl)}";
 
             // Normalize Ukrainian phone number to international 380XXXXXXXXX
             string phone = (order.Phone ?? "").Replace("+", "").Replace(" ", "").Replace("-", "").Replace("(", "").Replace(")", "");
