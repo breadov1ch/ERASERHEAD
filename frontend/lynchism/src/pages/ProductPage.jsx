@@ -29,7 +29,6 @@ export default function ProductPage({ updateCart }) {
   const [sizeError, setSizeError] = useState(false);
   const [adding, setAdding] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [showStickyBar, setShowStickyBar] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -66,14 +65,6 @@ export default function ProductPage({ updateCart }) {
 
     setShowShareModal(true);
   };
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowStickyBar(window.scrollY > 400);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -136,7 +127,7 @@ export default function ProductPage({ updateCart }) {
     : (product?.imageURL ? [product.imageURL] : []);
   const imagesList = rawImages.map(safeImg);
 
-    const availableColors = (() => {
+  const availableColors = (() => {
     if (!product?.colorsJson) return [];
     try {
       const parsed = JSON.parse(product.colorsJson);
@@ -337,6 +328,7 @@ export default function ProductPage({ updateCart }) {
     e.preventDefault();
     if (!selectedSize) {
       setSizeError(true);
+      triggerToast(t("product_select_size_warn"));
       return;
     }
     setSizeError(false);
@@ -501,9 +493,8 @@ export default function ProductPage({ updateCart }) {
             onMouseUp={onMouseUpGallery}
             onMouseLeave={onMouseUpGallery}
             style={{ touchAction: 'pan-y' }}
-            className={`w-full aspect-[3/4] max-h-[580px] bg-[#111111] border border-zinc-700 rounded-none relative overflow-hidden group shadow-xl select-none ${
-              isDragging ? 'cursor-grabbing' : 'cursor-grab'
-            }`}
+            className={`w-full aspect-[3/4] max-h-[580px] bg-[#111111] border border-zinc-700 rounded-none relative overflow-hidden group shadow-xl select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'
+              }`}
           >
             {/* Горизонтальная анимированная лента слайдов */}
             <div
@@ -572,11 +563,10 @@ export default function ProductPage({ updateCart }) {
                 {imagesList.map((_, idx) => (
                   <div
                     key={idx}
-                    className={`h-0.5 sm:h-1 rounded-none transition-all duration-300 ${
-                      idx === activeImageIndex
-                        ? 'w-6 sm:w-8 bg-white shadow-sm'
-                        : 'w-2 bg-zinc-600/70'
-                    }`}
+                    className={`h-0.5 sm:h-1 rounded-none transition-all duration-300 ${idx === activeImageIndex
+                      ? 'w-6 sm:w-8 bg-white shadow-sm'
+                      : 'w-2 bg-zinc-600/70'
+                      }`}
                   />
                 ))}
               </div>
@@ -1108,25 +1098,6 @@ export default function ProductPage({ updateCart }) {
           </div>
         );
       })()}
-
-      {/* ЛИПКАЯ КНОПКА ДОБАВЛЕНИЯ НА ТЕЛЕФОНЕ ПРИ СКРОЛЛЕ */}
-      {showStickyBar && product && (
-        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#161616]/98 backdrop-blur-md border-t border-zinc-700 p-3 shadow-2xl flex items-center justify-between gap-2.5 animate-slide-up-sheet font-mono">
-          <div className="truncate max-w-[130px]">
-            <span className="text-[11px] font-bold text-white uppercase block truncate">{product.name}</span>
-            <span className="text-xs font-bold text-zinc-300">{formatPrice(product.price)}</span>
-          </div>
-
-          <button
-            type="button"
-            disabled={adding}
-            onClick={addToCart}
-            className="flex-1 py-3 bg-white text-black text-xs font-black uppercase tracking-wider hover:bg-zinc-200 transition-colors cursor-pointer btn-press"
-          >
-            {adding ? t("product_adding") : t("product_add_to_cart")}
-          </button>
-        </div>
-      )}
 
       {/* МОДАЛКА "ПОДЕЛИТЬСЯ ТОВАРОМ" */}
       {showShareModal && (
