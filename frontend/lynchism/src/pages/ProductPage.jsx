@@ -216,9 +216,10 @@ export default function ProductPage({ updateCart }) {
       }
     }
     setDragOffset(0);
+    // Держим флаг 250мс, чтобы синтетический click после свайпа на телефоне не открывал зум
     setTimeout(() => {
       hasMovedRef.current = false;
-    }, 80);
+    }, 250);
   };
 
   const onMouseDownGallery = (e) => {
@@ -246,6 +247,66 @@ export default function ProductPage({ updateCart }) {
   const onMouseUpGallery = () => {
     if (!isDragging) return;
     onTouchEndGallery();
+  };
+
+  // Блокировка скролла страницы при открытом зуме (чтобы фото не улетало вниз)
+  useEffect(() => {
+    if (lightboxOpen) {
+      const origOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = origOverflow;
+      };
+    }
+  }, [lightboxOpen]);
+
+  // СВАЙП И ЗАКРЫТИЕ В ЛАЙТБОКСЕ (ПОЛНОЭКРАННЫЙ ЗУМ)
+  const lightboxTouchStartX = useRef(0);
+  const lightboxTouchStartY = useRef(0);
+  const [lightboxDragX, setLightboxDragX] = useState(0);
+  const [lightboxDragY, setLightboxDragY] = useState(0);
+  const [isLightboxDragging, setIsLightboxDragging] = useState(false);
+
+  const onLightboxTouchStart = (e) => {
+    if (!e.touches || e.touches.length === 0) return;
+    lightboxTouchStartX.current = e.touches[0].clientX;
+    lightboxTouchStartY.current = e.touches[0].clientY;
+    setIsLightboxDragging(true);
+  };
+
+  const onLightboxTouchMove = (e) => {
+    if (!e.touches || e.touches.length === 0) return;
+    const dx = e.touches[0].clientX - lightboxTouchStartX.current;
+    const dy = e.touches[0].clientY - lightboxTouchStartY.current;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      setLightboxDragX(dx);
+      setLightboxDragY(0);
+    } else {
+      if (dy > 0) {
+        setLightboxDragY(dy * 0.7);
+      }
+      setLightboxDragX(0);
+    }
+  };
+
+  const onLightboxTouchEnd = () => {
+    setIsLightboxDragging(false);
+    if (lightboxDragY > 70) {
+      setLightboxOpen(false);
+      setLightboxDragY(0);
+      setLightboxDragX(0);
+      return;
+    }
+    if (Math.abs(lightboxDragX) > 40) {
+      if (lightboxDragX < 0) {
+        handleNextImage();
+      } else {
+        handlePrevImage();
+      }
+    }
+    setLightboxDragX(0);
+    setLightboxDragY(0);
   };
 
   // Переключение фото стрелками клавиатуры и закрытие по Esc
@@ -817,71 +878,80 @@ export default function ProductPage({ updateCart }) {
 
       </div>
 
-      {/* ПОЛНОЭКРАННЫЙ ПРОСМОТР ФОТО (LIGHTBOX) С ЖИВЫМ СВАЙПОМ */}
+      {/* ПОЛНОЭКРАННЫЙ ПРОСМОТР ФОТО (LIGHTBOX) С ЖИВЫМ СВАЙПОМ И ЗАКРЫТИЕМ ВНИЗ */}
       {lightboxOpen && (
         <div
           onClick={() => setLightboxOpen(false)}
-          className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 cursor-zoom-out animate-fade-in select-none"
+          className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-3 select-none"
+          style={{ touchAction: 'none' }}
         >
-          <div
-            className="relative w-full max-w-4xl h-[85vh] flex items-center justify-center select-none overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-            onTouchStart={onTouchStartGallery}
-            onTouchMove={onTouchMoveGallery}
-            onTouchEnd={onTouchEndGallery}
-            onMouseDown={onMouseDownGallery}
-            onMouseMove={onMouseMoveGallery}
-            onMouseUp={onMouseUpGallery}
-            onMouseLeave={onMouseUpGallery}
-            style={{ touchAction: 'pan-y' }}
+          {/* Фиксированная кнопка закрытия */}
+          <button
+            type="button"
+            onClick={() => setLightboxOpen(false)}
+            className="fixed top-4 right-4 z-50 bg-black/90 border border-zinc-700 text-white px-3.5 py-2 text-xs font-mono uppercase tracking-widest hover:border-white transition-colors cursor-pointer shadow-xl flex items-center gap-1.5 btn-press"
           >
-            {/* Горизонтальная лента для лайтбокса */}
-            <div
-              className="flex h-full w-full will-change-transform"
-              style={{
-                transform: `translateX(calc(-${activeImageIndex * 100}% + ${dragOffset}px))`,
-                transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
-              }}
-            >
-              {imagesList.map((img, idx) => (
-                <div key={idx} className="w-full h-full shrink-0 flex items-center justify-center p-2">
-                  <img
-                    src={img}
-                    alt={`High-Res ${idx + 1}`}
-                    className="max-w-full max-h-[85vh] object-contain rounded-none border border-zinc-800 shadow-2xl pointer-events-none select-none"
-                    draggable="false"
-                  />
-                </div>
-              ))}
-            </div>
+            <span>✕</span>
+            <span>{t("product_close")}</span>
+          </button>
 
-            {imagesList.length > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={handlePrevImage}
-                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-none bg-black/90 border border-zinc-700 text-white flex items-center justify-center text-lg hover:border-white transition-colors cursor-pointer z-20 btn-press"
-                  aria-label="Previous image"
-                >
-                  ‹
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNextImage}
-                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-none bg-black/90 border border-zinc-700 text-white flex items-center justify-center text-lg hover:border-white transition-colors cursor-pointer z-20 btn-press"
-                  aria-label="Next image"
-                >
-                  ›
-                </button>
-              </>
-            )}
+          {/* Индикатор текущего кадра */}
+          <div className="fixed top-4 left-4 z-50 pointer-events-none">
+            <span className="bg-black/90 px-3 py-1.5 border border-zinc-800 text-[11px] text-zinc-300 font-mono uppercase tracking-wider">
+              {activeImageIndex + 1} / {imagesList.length || 1}
+            </span>
+          </div>
 
-            <button
-              onClick={() => setLightboxOpen(false)}
-              className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-black/90 border border-zinc-700 text-zinc-300 hover:text-white px-3 py-1.5 rounded-none text-xs uppercase tracking-wider font-mono cursor-pointer z-20"
-            >
-              {t("product_close")}
-            </button>
+          {/* Контейнер изображения: строго центрирован, не улетает вниз */}
+          <div
+            className="relative flex items-center justify-center max-w-4xl max-h-[82vh] w-full"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={onLightboxTouchStart}
+            onTouchMove={onLightboxTouchMove}
+            onTouchEnd={onLightboxTouchEnd}
+            style={{
+              transform: `translate(${lightboxDragX}px, ${lightboxDragY}px)`,
+              transition: isLightboxDragging ? 'none' : 'transform 0.25s ease-out',
+              opacity: lightboxDragY > 0 ? Math.max(0.2, 1 - lightboxDragY / 250) : 1,
+              touchAction: 'none'
+            }}
+          >
+            <img
+              key={`lightbox-${activeImageIndex}`}
+              src={imagesList[activeImageIndex] || safeImg(product?.imageURL)}
+              alt="High-Res Inspection"
+              className="max-w-[92vw] max-h-[80vh] object-contain rounded-none border border-zinc-800 shadow-2xl pointer-events-none select-none animate-fade-in"
+              draggable="false"
+            />
+          </div>
+
+          {/* Стрелки переключения для ПК */}
+          {imagesList.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrevImage}
+                className="hidden sm:flex fixed left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/90 border border-zinc-700 text-white items-center justify-center text-lg hover:border-white transition-colors cursor-pointer z-50 btn-press"
+                aria-label="Previous image"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                onClick={handleNextImage}
+                className="hidden sm:flex fixed right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/90 border border-zinc-700 text-white items-center justify-center text-lg hover:border-white transition-colors cursor-pointer z-50 btn-press"
+                aria-label="Next image"
+              >
+                ›
+              </button>
+            </>
+          )}
+
+          {/* Подсказка для мобильных телефонов */}
+          <div className="fixed bottom-4 left-0 right-0 flex justify-center pointer-events-none z-50 sm:hidden">
+            <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest bg-black/80 px-2.5 py-1 border border-zinc-800">
+              ← Свайп для зміни • Вниз для закриття ↓
+            </span>
           </div>
         </div>
       )}
