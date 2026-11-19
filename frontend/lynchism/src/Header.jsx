@@ -31,15 +31,6 @@ const Header = ({ cartCount }) => {
     tickerDirectionRef.current = tickerDirection;
   }, [tickerDirection]);
 
-  const toggleTickerDirection = (e) => {
-    if (e) e.stopPropagation();
-    const nextDir = tickerDirection === "left" ? "right" : "left";
-    setTickerDirection(nextDir);
-    localStorage.setItem("ticker_dir", nextDir);
-    tickerMomentumRef.current = 0;
-    playClickSound();
-  };
-
   useEffect(() => {
     let animId;
     let lastTime = performance.now();
@@ -185,27 +176,15 @@ const Header = ({ cartCount }) => {
         }}
         onDragStart={(e) => e.preventDefault()}
         title={loc(
-          `Конвеєр: потягніть мишею або натисніть кнопку для реверсу`,
-          `Conveyor belt: drag with cursor or click button to reverse`,
-          `Конвейер: потяните мышью или нажмите кнопку для реверса`
+          `Конвеєр: потягніть мишею або пальцем`,
+          `Conveyor belt: drag with cursor or touch`,
+          `Конвейер: потяните мышью или пальцем`
         )}
         className={`w-full bg-[#181818] border-b border-zinc-700/80 py-1.5 overflow-hidden select-none whitespace-nowrap relative group transition-colors hover:bg-[#202020] ${
           isTickerDragging ? 'cursor-grabbing' : 'cursor-grab'
         }`}
         style={{ userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'pan-y' }}
       >
-        {/* Кнопка переключения направления */}
-        <button
-          type="button"
-          onClick={toggleTickerDirection}
-          onMouseDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 flex items-center gap-1.5 bg-black/85 hover:bg-black px-2.5 py-1 border border-zinc-700 font-mono text-[9px] uppercase tracking-wider text-zinc-300 hover:text-white cursor-pointer shadow-md select-none transition-transform active:scale-95"
-        >
-          <span>{tickerDirection === 'left' ? '⟵' : '⟶'}</span>
-          <span className="hidden sm:inline">{loc('ЗМІНИТИ НАПРЯМОК', 'REVERSE', 'ИЗМЕНИТЬ НАПРАВЛЕНИЕ')}</span>
-        </button>
-
         {/* Движущаяся лента конвейера с аппаратным ускорением */}
         <div 
           ref={tickerTrackRef}
