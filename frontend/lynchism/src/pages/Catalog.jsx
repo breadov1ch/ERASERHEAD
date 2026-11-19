@@ -252,7 +252,7 @@ export default function Catalog() {
   }, [products]);
 
   return (
-    <div className="bg-[#131313] text-zinc-100 min-h-screen py-8 px-4 sm:px-6 lg:px-8 font-mono">
+    <div className="bg-[#131313] text-zinc-100 min-h-screen py-6 sm:py-8 px-4 sm:px-6 lg:px-8 font-mono overflow-x-hidden max-w-full">
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* Заголовок каталога (Компактный на телефоне) */}

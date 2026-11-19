@@ -165,7 +165,7 @@ const Header = ({ cartCount }) => {
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-[#141414]/95 border-b border-zinc-700 backdrop-blur-md select-none transition-all duration-300 shadow-md">
+    <header className="sticky top-0 z-50 bg-[#141414]/95 border-b border-zinc-700 backdrop-blur-md select-none transition-all duration-300 shadow-md w-full max-w-full overflow-hidden">
       {/* Бесконечный интерактивный конвейер сверху (drag & roll) */}
       <div 
         onMouseDown={(e) => {
@@ -206,7 +206,7 @@ const Header = ({ cartCount }) => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between px-4 sm:px-8 py-3.5 max-w-[1700px] mx-auto">
+      <div className="flex items-center justify-between px-3 sm:px-8 py-3 sm:py-3.5 max-w-[1700px] mx-auto w-full">
         
         {/* ЛЕВАЯ ЧАСТЬ: Логотип и Навигация */}
         <div className="flex items-center gap-8 lg:gap-12">

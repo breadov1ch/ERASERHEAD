@@ -240,11 +240,11 @@ export default function ProductPage({ updateCart }) {
   };
 
   return (
-    <div className="bg-[#131313] text-zinc-100 min-h-screen py-8 px-4 sm:px-6 lg:px-8 font-mono">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+    <div className="bg-[#131313] text-zinc-100 min-h-screen py-4 sm:py-8 px-3 sm:px-6 lg:px-8 font-mono overflow-x-hidden max-w-full">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 items-start max-w-full">
 
         {/* ЛЕВАЯ КОЛОНКА: ГАЛЕРЕЯ */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4 max-w-full overflow-hidden">
 
           {/* Главное фото */}
           <div
@@ -283,14 +283,14 @@ export default function ProductPage({ updateCart }) {
               </>
             )}
 
-            <div className="absolute bottom-3 left-3 bg-[#111111]/90 px-3 py-1 rounded-none text-[11px] text-zinc-300 border border-zinc-700 uppercase tracking-wider">
+            <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:right-auto bg-[#111111]/90 px-2.5 py-1 rounded-none text-[10px] sm:text-[11px] text-zinc-300 border border-zinc-700 uppercase tracking-wider truncate">
               {t("product_photo")} {activeImageIndex + 1} / {imagesList.length || 1} • {t("product_zoom_tip")}
             </div>
           </div>
 
           {/* Миниатюры фото */}
           {imagesList.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar max-w-full">
               {imagesList.map((img, idx) => (
                 <button
                   key={idx}
@@ -314,28 +314,28 @@ export default function ProductPage({ updateCart }) {
         </div>
 
         {/* ПРАВАЯ КОЛОНКА: ИНФО О ТОВАРЕ */}
-        <div className="bg-[#181818] border border-zinc-700 rounded-none p-6 sm:p-8 space-y-6 shadow-xl">
+        <div className="bg-[#181818] border border-zinc-700 rounded-none p-4 sm:p-8 space-y-5 sm:space-y-6 shadow-xl max-w-full overflow-hidden">
 
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-none bg-white text-black uppercase tracking-widest font-mono">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2 border-b border-zinc-800">
+            <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-none bg-white text-black uppercase tracking-widest font-mono shrink-0">
                 {product?.gender === 'Men' ? (t("gender_men") || loc('ЧОЛОВІЧЕ', 'MEN', 'МУЖСКОЕ')) : product?.gender === 'Women' ? (t("gender_women") || loc('ЖІНОЧЕ', 'WOMEN', 'ЖЕНСКОЕ')) : (t("gender_unisex") || loc('УНІСЕКС', 'UNISEX', 'УНИСЕКС'))}
               </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-none bg-[#121212] text-zinc-300 uppercase tracking-widest border border-zinc-700 font-mono">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-none bg-[#121212] text-zinc-300 uppercase tracking-widest border border-zinc-700 font-mono shrink-0">
                 {product?.category || t("product_category_default")}
               </span>
               {product?.isPreOrder && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-none bg-black text-zinc-300 uppercase tracking-widest border border-zinc-700 font-mono">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-none bg-black text-zinc-300 uppercase tracking-widest border border-zinc-700 font-mono shrink-0">
                   ★ {loc('ПЕРЕДЗАМОВЛЕННЯ', 'PRE-ORDER', 'ПРЕДЗАКАЗ')}
                 </span>
               )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 shrink-0 ml-auto">
               <button
                 type="button"
                 onClick={handleShare}
-                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer btn-press"
+                className="flex items-center gap-1 text-[11px] sm:text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer btn-press"
                 title={loc("Поділитися товаром", "Share product", "Поделиться товаром")}
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -345,14 +345,15 @@ export default function ProductPage({ updateCart }) {
                   <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
                   <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
                 </svg>
-                <span className="text-xs uppercase">{loc('ПОДІЛИТИСЯ', 'SHARE', 'ПОДЕЛИТЬСЯ')}</span>
+                <span className="uppercase">{loc('ПОДІЛИТИСЯ', 'SHARE', 'ПОДЕЛИТЬСЯ')}</span>
               </button>
 
               <button
                 onClick={handleToggleWishlist}
-                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer btn-press"
+                className="flex items-center gap-1 text-[11px] sm:text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer btn-press"
               >
-                <span className="text-sm">
+                <span>{isSaved ? "★" : "☆"}</span>
+                <span className="uppercase">
                   {isSaved ? t("product_wishlist_saved") : t("product_wishlist_add")}
                 </span>
               </button>
@@ -360,11 +361,11 @@ export default function ProductPage({ updateCart }) {
           </div>
 
           <div>
-            <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+            <h1 className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight break-words">
               {product?.name}
             </h1>
-            <div className="mt-3 flex items-baseline gap-3">
-              <span className="text-2xl sm:text-3xl font-extrabold text-white">
+            <div className="mt-2.5 sm:mt-3 flex items-baseline gap-3">
+              <span className="text-xl sm:text-3xl font-extrabold text-white">
                 {product ? formatPrice(product.price) : ""}
               </span>
               <span className="text-xs text-zinc-400">
@@ -373,25 +374,25 @@ export default function ProductPage({ updateCart }) {
             </div>
           </div>
 
-          <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-line">
+          <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed whitespace-pre-line break-words">
             {product?.description}
           </p>
 
           {/* Параметры ткани и кроя */}
-          <div className="grid grid-cols-2 gap-3 p-4 bg-[#111111] rounded-none border border-zinc-700 text-xs">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 p-3.5 sm:p-4 bg-[#111111] rounded-none border border-zinc-700 text-xs">
+            <div className="min-w-0">
               <span className="text-zinc-400 block mb-0.5 uppercase tracking-wider text-[10px]">
                 {t("product_silhouette")}:
               </span>
-              <span className="text-white font-bold uppercase">
+              <span className="text-white font-bold uppercase break-words block">
                 {product?.silhouette || "OVERSIZED"}
               </span>
             </div>
-            <div>
+            <div className="min-w-0">
               <span className="text-zinc-400 block mb-0.5 uppercase tracking-wider text-[10px]">
                 {t("product_fabric")}:
               </span>
-              <span className="text-white font-bold uppercase">
+              <span className="text-white font-bold uppercase break-words block">
                 {product?.fabric || t("product_fabric_default")}
               </span>
             </div>
