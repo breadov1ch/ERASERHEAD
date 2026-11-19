@@ -272,109 +272,11 @@ export default function Catalog() {
           </p>
         </div>
 
-        {/* ЛИПКАЯ ПАНЕЛЬ ФИЛЬТРАЦИИ И КАТЕГОРИЙ */}
-        <div className="sticky top-[47px] sm:top-[51px] z-30 bg-[#141414]/95 backdrop-blur-md border-b border-zinc-800 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 shadow-2xl transition-all duration-300 space-y-2">
-          
-          {/* РЯД 1: ВЫБОР ПОЛА + БЫСТРЫЙ ПОИСК И СОРТИРОВКА ДЛЯ ПК */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-            {/* Выбор пола */}
-            <div className="grid grid-cols-4 sm:flex items-center gap-1 bg-[#0e0e0e] p-1 border border-zinc-800">
-              {genderTabs.map((gTab) => {
-                const isGenderActive = (gender || "All").toLowerCase() === gTab.key.toLowerCase();
-                return (
-                  <button
-                    key={gTab.key}
-                    type="button"
-                    onClick={() => handleGenderChange(gTab.key)}
-                    className={`py-1.5 px-2.5 sm:px-3 text-[10px] sm:text-xs font-bold uppercase tracking-wider font-mono text-center transition-all cursor-pointer btn-press ${
-                      isGenderActive
-                        ? 'bg-white text-black font-black shadow-sm'
-                        : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
-                    }`}
-                  >
-                    {gTab.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* На десктопе по центру/справа: быстрый поиск, сортировка и фильтры */}
-            <div className="flex items-center justify-between sm:justify-end gap-2">
-              {/* Быстрый поиск для десктопа */}
-              <div className="hidden lg:flex items-center relative w-52 xl:w-64">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t("catalog_search") || loc("Пошук товару...", "Search items...", "Поиск товара...")}
-                  className="w-full bg-[#0e0e0e] border border-zinc-700 text-white text-xs font-mono px-3 py-1.5 pr-7 outline-none focus:border-white transition-colors placeholder:text-zinc-600"
-                />
-                {searchQuery ? (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-2 text-zinc-400 hover:text-white text-xs cursor-pointer font-bold"
-                  >
-                    ✕
-                  </button>
-                ) : (
-                  <span className="absolute right-2 text-zinc-600 text-xs pointer-events-none">⌕</span>
-                )}
-              </div>
-
-              {/* Сортировка цены */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClickSound();
-                  setMinOfMax(prev => prev === 0 ? 1 : 0);
-                }}
-                className="flex items-center gap-1 px-3 py-1.5 bg-[#181818] border border-zinc-700 hover:border-zinc-400 text-zinc-200 text-xs font-mono font-bold uppercase cursor-pointer btn-press transition-colors"
-                title={loc("Сортування за ціною", "Sort by price", "Сортировка по цене")}
-              >
-                <span>{minOfMax === 0 ? loc('Ціна ↓', 'Price ↓', 'Цена ↓') : loc('Ціна ↑', 'Price ↑', 'Цена ↑')}</span>
-              </button>
-
-              {/* Кнопка расширенных фильтров */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClickSound();
-                  setFilterPanelOpen(prev => !prev);
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider border cursor-pointer btn-press transition-colors ${
-                  filterPanelOpen || (activeFiltersCount > 0 && (size !== 'All' || showSavedOnly || value[0] > 0 || value[1] < 10000))
-                    ? 'bg-white text-black border-white font-black'
-                    : 'bg-[#181818] text-zinc-200 border-zinc-700 hover:border-zinc-400 hover:text-white'
-                }`}
-                title={loc("Розширені фільтри (розмір, ціна)", "Advanced filters (size, price)", "Расширенные фильтры (размер, цена)")}
-              >
-                <span>⚙</span>
-                <span>{loc("ФІЛЬТРИ", "FILTERS", "ФИЛЬТРЫ")}</span>
-                {activeFiltersCount > 0 && (
-                  <span className="px-1.5 py-0.2 bg-black text-white text-[9px] font-bold font-mono border border-zinc-600">
-                    {activeFiltersCount}
-                  </span>
-                )}
-              </button>
-
-              {/* Сброс */}
-              {activeFiltersCount > 0 && (
-                <button
-                  type="button"
-                  onClick={handleResetFilters}
-                  className="flex items-center px-2 py-1.5 text-[10px] font-mono text-zinc-400 hover:text-white uppercase tracking-wider cursor-pointer underline"
-                  title={loc("Скинути всі фільтри", "Reset all filters", "Сбросить все фильтры")}
-                >
-                  {loc("✕ Скинути", "✕ Reset", "✕ Сбросить")}
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* РЯД 2: КАТЕГОРИИ: НА ДЕСКТОПЕ ОНИ ОБЕРНУТЫ (flex-wrap) И ВСЁ ВИДНО, НА ТЕЛЕФОНЕ — ПЛАВНЫЙ СКРОЛЛ */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto sm:overflow-visible sm:flex-wrap no-scrollbar py-0.5 flex-1">
+        {/* ЛИПКАЯ ПАНЕЛЬ ТОЛЬКО КАТЕГОРИЙ ВВЕРХУ (ОСТАЕТСЯ СТАТИЧНОЙ ПРИ СКРОЛЛЕ) */}
+        <div className="sticky top-[47px] sm:top-[51px] z-30 bg-[#131313]/95 backdrop-blur-md border-b border-zinc-800 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-2.5 shadow-xl transition-all">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+            {/* Горизонтальная линейка категорий */}
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 flex-1">
               {categoryTabs.map((tab) => {
                 const isTabActive = category.toLowerCase() === tab.key.toLowerCase();
                 const count = categoryCounts[tab.key] ?? 0;
@@ -383,7 +285,7 @@ export default function Catalog() {
                     key={tab.key}
                     type="button"
                     onClick={() => handleCategoryChange(tab.key)}
-                    className={`shrink-0 px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider font-mono border transition-all cursor-pointer btn-press flex items-center gap-1.5 ${
+                    className={`shrink-0 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider font-mono border transition-all cursor-pointer btn-press flex items-center gap-1.5 ${
                       isTabActive
                         ? 'bg-white text-black border-white shadow-md font-black'
                         : 'bg-[#181818] text-zinc-300 border-zinc-800 hover:border-zinc-500 hover:text-white'
@@ -398,165 +300,36 @@ export default function Catalog() {
               })}
             </div>
 
-            {/* На телефоне справа: компактная кнопка фильтров */}
-            <div className="sm:hidden flex items-center shrink-0">
+            {/* На планшетах и мобилках (< lg): кнопка открытия шторки фильтров */}
+            <div className="lg:hidden flex items-center shrink-0">
               <button
                 type="button"
                 onClick={() => {
                   playClickSound();
                   setFilterPanelOpen(prev => !prev);
                 }}
-                className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-mono font-bold uppercase tracking-wider border cursor-pointer btn-press transition-colors ${
-                  filterPanelOpen || (activeFiltersCount > 0 && (size !== 'All' || searchQuery || showSavedOnly || value[0] > 0 || value[1] < 10000))
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider border cursor-pointer btn-press transition-colors ${
+                  filterPanelOpen || activeFiltersCount > 0
                     ? 'bg-white text-black border-white font-black'
                     : 'bg-[#181818] text-zinc-200 border-zinc-700'
                 }`}
               >
                 <span>⚙</span>
+                <span>{loc("ФІЛЬТРИ", "FILTERS", "ФИЛЬТРЫ")}</span>
                 {activeFiltersCount > 0 && (
-                  <span className="px-1 py-0.2 bg-black text-white text-[9px] font-bold font-mono">
+                  <span className="px-1.5 py-0.2 bg-black text-white text-[9px] font-bold font-mono">
                     {activeFiltersCount}
                   </span>
                 )}
               </button>
             </div>
           </div>
-
         </div>
 
-        {/* ЕДИНСТВЕННАЯ ПАНЕЛЬ ДЕТАЛЬНЫХ ФИЛЬТРОВ (БЕЗ ДУБЛЕЙ КАТЕГОРИЙ И ПОЛА) */}
-        {filterPanelOpen && (
-          <div className="bg-[#161616] border border-zinc-700 p-4 sm:p-5 shadow-2xl animate-fade-in-up space-y-4 font-mono">
-            <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-zinc-200 flex items-center gap-1.5">
-                <span>⚙</span> {loc('ДЕТАЛЬНІ ФІЛЬТРИ', 'DETAILED FILTERS', 'ДЕТАЛЬНЫЕ ФИЛЬТРЫ')} // {sortedProducts.length} {loc('ТОВАРІВ', 'ITEMS', 'ТОВАРОВ')}
-              </span>
-              <div className="flex items-center gap-3">
-                {activeFiltersCount > 0 && (
-                  <button
-                    onClick={handleResetFilters}
-                    className="text-[11px] text-zinc-400 hover:text-white uppercase tracking-wider cursor-pointer underline"
-                  >
-                    {loc('✕ Скинути все', '✕ Reset All', '✕ Сбросить все')}
-                  </button>
-                )}
-                <button
-                  onClick={() => setFilterPanelOpen(false)}
-                  className="text-zinc-400 hover:text-white text-sm cursor-pointer px-1"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-              {/* Поиск */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                  {t("catalog_filter_search")}
-                </label>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t("catalog_search")}
-                  className="w-full bg-[#101010] border border-zinc-700 text-white px-3 py-2 text-xs outline-none focus:border-white font-mono"
-                />
-              </div>
-
-              {/* Размеры */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                  {t("catalog_filter_size")}
-                </label>
-                <div className="flex flex-wrap gap-1">
-                  {["All", "S", "M", "L", "XL", "XXL", "ONE SIZE"].map((sz) => (
-                    <button
-                      key={sz}
-                      type="button"
-                      onClick={() => { playClickSound(); setSize(sz); }}
-                      className={`px-2.5 py-1 text-[10px] font-bold uppercase border cursor-pointer transition-all ${size === sz 
-                        ? 'bg-white text-black border-white font-black' 
-                        : 'bg-black text-zinc-400 border-zinc-800 hover:border-zinc-500 hover:text-white'
-                        }`}
-                    >
-                      {sz}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Диапазон цены (чистый белый слайдер) */}
-              <div className="space-y-1">
-                <div className="flex justify-between items-center text-[10px] font-bold uppercase text-zinc-400">
-                  <span>{loc('Ціна:', 'Price:', 'Цена:')}</span>
-                  <span className="text-white font-mono">{formatPrice(value[0])} - {formatPrice(value[1])}</span>
-                </div>
-                <div className="px-2">
-                  <Slider
-                    value={value}
-                    onChange={(e, newVal) => setValue(newVal)}
-                    min={0}
-                    max={10000}
-                    step={50}
-                    sx={{
-                      color: '#ffffff',
-                      height: 2,
-                      '& .MuiSlider-thumb': {
-                        width: 12,
-                        height: 12,
-                        borderRadius: '0px',
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #000000',
-                      },
-                      '& .MuiSlider-track': {
-                        backgroundColor: '#ffffff',
-                        border: 'none',
-                        height: 2,
-                        borderRadius: '0px',
-                      },
-                      '& .MuiSlider-rail': {
-                        backgroundColor: '#3f3f46',
-                        opacity: 1,
-                        height: 2,
-                        borderRadius: '0px',
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Сортировка + Избранное + Закрыть */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClickSound();
-                    setShowSavedOnly(!showSavedOnly);
-                  }}
-                  className={`flex-1 py-2 px-2.5 text-[11px] uppercase font-bold text-center border cursor-pointer transition-colors ${showSavedOnly
-                    ? 'bg-white text-black border-white'
-                    : 'bg-black text-zinc-300 border-zinc-700 hover:border-zinc-500 hover:text-white'
-                    }`}
-                  title={loc("Показати тільки обране", "Show wishlist only", "Показать только избранное")}
-                >
-                  ★ {t("catalog_wishlist_btn")} ({wishlistState.length})
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFilterPanelOpen(false)}
-                  className="bg-white text-black font-black uppercase text-xs py-2 px-4 hover:bg-zinc-200 cursor-pointer"
-                >
-                  {loc("Готово", "Done", "Готово")}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* ПЛАВАЮЩАЯ КНОПКА ДЛЯ ТЕЛЕФОНА (MOBILE FLOATING TRIGGER) */}
-        <div className="md:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 bg-[#141414]/95 backdrop-blur-md border border-zinc-700 px-4 py-2.5 shadow-2xl">
+        <div className="lg:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 bg-[#141414]/95 backdrop-blur-md border border-zinc-700 px-4 py-2.5 shadow-2xl">
           <button
             type="button"
             onClick={() => {
@@ -588,7 +361,7 @@ export default function Catalog() {
 
         {/* МОБИЛЬНЫЙ BOTTOM SHEET ДЛЯ ТЕЛЕФОНА (ЧИСТЫЙ МОНОХРОМ БЕЗ ЖЕЛТОГО) */}
         {filterPanelOpen && (
-          <div className="md:hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end animate-fade-in" onClick={() => setFilterPanelOpen(false)}>
+          <div className="lg:hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end animate-fade-in" onClick={() => setFilterPanelOpen(false)}>
             <div
               className="w-full bg-[#161616] border-t border-zinc-700 max-h-[85vh] overflow-y-auto p-5 space-y-5 font-mono animate-slide-up-sheet shadow-2xl"
               onClick={(e) => e.stopPropagation()}
@@ -598,7 +371,7 @@ export default function Catalog() {
 
               <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
                 <span className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
-                  <span>⚙</span> {loc("ФІЛЬТРИ", "FILTERS", "ФИЛЬТРЫ")} // {sortedProducts.length} {loc("ЗНАЙДЕНО", "FOUND", "НАЙДЕНО")}
+                  <span>⚙</span> {loc("ФІЛЬТРИ", "FILTERS", "ФИЛЬТРЫ")} {"//"} {sortedProducts.length} {loc("ЗНАЙДЕНО", "FOUND", "НАЙДЕНО")}
                 </span>
                 <button
                   onClick={() => setFilterPanelOpen(false)}
@@ -620,6 +393,32 @@ export default function Catalog() {
                   placeholder={loc("Введіть назву...", "Enter name...", "Введите название...")}
                   className="w-full bg-black border border-zinc-700 text-white p-3 text-xs outline-none focus:border-white font-mono"
                 />
+              </div>
+
+              {/* Выбор пола для мобилки */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase text-zinc-400 block tracking-wider">
+                  {loc("Стать", "Gender", "Пол")}
+                </label>
+                <div className="grid grid-cols-4 gap-1 bg-black p-1 border border-zinc-800">
+                  {genderTabs.map((gTab) => {
+                    const isGenderActive = (gender || "All").toLowerCase() === gTab.key.toLowerCase();
+                    return (
+                      <button
+                        key={gTab.key}
+                        type="button"
+                        onClick={() => handleGenderChange(gTab.key)}
+                        className={`py-2 text-[10px] font-bold uppercase tracking-wider font-mono text-center btn-press ${
+                          isGenderActive
+                            ? 'bg-white text-black font-black'
+                            : 'text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        {gTab.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Размеры */}
@@ -742,8 +541,290 @@ export default function Catalog() {
           </div>
         )}
 
-        {/* Сетка товаров */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-6 items-stretch">
+        {/* ОСНОВНОЙ КОНТЕНТ: ЛЕВЫЙ СТИКИ-САЙДБАР С ФИЛЬТРАМИ + ПРАВАЯ ЧАСТЬ С СЕТКОЙ ТОВАРОВ */}
+        <div className="flex flex-col lg:flex-row items-start gap-6 xl:gap-8 pt-2">
+
+          {/* ЛЕВЫЙ СТИКИ-САЙДБАР ФИЛЬТРОВ (ДЛЯ ПК) */}
+          <aside className="hidden lg:block w-64 xl:w-72 shrink-0 sticky top-[115px] self-start space-y-4 bg-[#141414] border border-zinc-800 p-4 font-mono text-xs shadow-xl">
+            {/* Шапка фильтров */}
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="text-zinc-500 font-bold">{"//"}</span>
+                <span className="text-xs font-black uppercase tracking-wider text-white">
+                  {loc("Фільтри", "Filters", "Фильтры")}
+                </span>
+                {activeFiltersCount > 0 && (
+                  <span className="px-1.5 py-0.2 bg-white text-black text-[10px] font-bold">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </div>
+              {activeFiltersCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="text-[10px] text-zinc-400 hover:text-white uppercase tracking-wider cursor-pointer underline transition-colors"
+                >
+                  {loc("Скинути", "Reset", "Сбросить")}
+                </button>
+              )}
+            </div>
+
+            {/* Быстрый поиск */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">
+                {t("catalog_filter_search") || loc("Пошук", "Search", "Поиск")}
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t("catalog_search") || loc("Пошук товару...", "Search items...", "Поиск товара...")}
+                  className="w-full bg-[#0e0e0e] border border-zinc-700 text-white text-xs font-mono px-3 py-2 pr-7 outline-none focus:border-white transition-colors placeholder:text-zinc-600"
+                />
+                {searchQuery ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white text-xs cursor-pointer font-bold"
+                  >
+                    ✕
+                  </button>
+                ) : (
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-600 text-xs pointer-events-none">⌕</span>
+                )}
+              </div>
+            </div>
+
+            {/* Выбор пола */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">
+                {loc("Стать", "Gender", "Пол")}
+              </label>
+              <div className="grid grid-cols-2 gap-1.5 bg-[#0e0e0e] p-1 border border-zinc-800">
+                {genderTabs.map((gTab) => {
+                  const isGenderActive = (gender || "All").toLowerCase() === gTab.key.toLowerCase();
+                  return (
+                    <button
+                      key={gTab.key}
+                      type="button"
+                      onClick={() => handleGenderChange(gTab.key)}
+                      className={`py-1.5 px-2 text-[10px] font-bold uppercase tracking-wider font-mono text-center transition-all cursor-pointer btn-press ${
+                        isGenderActive
+                          ? 'bg-white text-black font-black shadow-sm'
+                          : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+                      }`}
+                    >
+                      {gTab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Сортировка цены */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">
+                {loc("Сортування ціни", "Price Sorting", "Сортировка цены")}
+              </label>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClickSound();
+                    setMinOfMax(0);
+                  }}
+                  className={`py-1.5 px-2 text-[10px] font-bold uppercase border cursor-pointer btn-press transition-colors text-center ${
+                    minOfMax === 0
+                      ? 'bg-white text-black border-white font-black'
+                      : 'bg-[#181818] text-zinc-400 border-zinc-800 hover:border-zinc-500 hover:text-white'
+                  }`}
+                >
+                  {loc("Ціна ↓", "Price ↓", "Цена ↓")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClickSound();
+                    setMinOfMax(1);
+                  }}
+                  className={`py-1.5 px-2 text-[10px] font-bold uppercase border cursor-pointer btn-press transition-colors text-center ${
+                    minOfMax === 1
+                      ? 'bg-white text-black border-white font-black'
+                      : 'bg-[#181818] text-zinc-400 border-zinc-800 hover:border-zinc-500 hover:text-white'
+                  }`}
+                >
+                  {loc("Ціна ↑", "Price ↑", "Цена ↑")}
+                </button>
+              </div>
+            </div>
+
+            {/* Размеры */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                <span>{t("catalog_filter_size") || loc("Розмір", "Size", "Размер")}</span>
+                {size !== "All" && (
+                  <span className="text-white font-bold">{size}</span>
+                )}
+              </div>
+              <div className="grid grid-cols-4 gap-1">
+                {["All", "S", "M", "L", "XL", "XXL", "ONE SIZE"].map((sz) => (
+                  <button
+                    key={sz}
+                    type="button"
+                    onClick={() => { playClickSound(); setSize(sz); }}
+                    className={`py-1.5 text-[10px] font-bold uppercase border cursor-pointer transition-all ${
+                      size === sz 
+                        ? 'bg-white text-black border-white font-black' 
+                        : 'bg-black text-zinc-400 border-zinc-800 hover:border-zinc-500 hover:text-white'
+                    } ${sz === "ONE SIZE" ? "col-span-2" : ""}`}
+                  >
+                    {sz}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Диапазон цены */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex justify-between items-center text-[10px] font-bold uppercase text-zinc-400">
+                <span>{loc('Діапазон цін', 'Price Range', 'Диапазон цен')}</span>
+                <span className="text-white font-mono">{formatPrice(value[0])} - {formatPrice(value[1])}</span>
+              </div>
+              <div className="px-1.5 pt-1">
+                <Slider
+                  value={value}
+                  onChange={(e, newVal) => setValue(newVal)}
+                  min={0}
+                  max={10000}
+                  step={50}
+                  sx={{
+                    color: '#ffffff',
+                    height: 2,
+                    '& .MuiSlider-thumb': {
+                      width: 12,
+                      height: 12,
+                      borderRadius: '0px',
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #000000',
+                    },
+                    '& .MuiSlider-track': {
+                      backgroundColor: '#ffffff',
+                      border: 'none',
+                      height: 2,
+                      borderRadius: '0px',
+                    },
+                    '& .MuiSlider-rail': {
+                      backgroundColor: '#3f3f46',
+                      opacity: 1,
+                      height: 2,
+                      borderRadius: '0px',
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Только избранное */}
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  playClickSound();
+                  setShowSavedOnly(!showSavedOnly);
+                }}
+                className={`w-full py-2 px-3 text-[10px] uppercase font-bold text-center border cursor-pointer transition-colors flex items-center justify-center gap-2 ${
+                  showSavedOnly
+                    ? 'bg-white text-black border-white'
+                    : 'bg-[#181818] text-zinc-300 border-zinc-800 hover:border-zinc-600 hover:text-white'
+                }`}
+              >
+                <span>★</span>
+                <span>{t("catalog_wishlist_btn") || loc("Обране", "Wishlist", "Избранное")} ({wishlistState.length})</span>
+              </button>
+            </div>
+
+            {/* Сброс всех фильтров (если активны) */}
+            {activeFiltersCount > 0 && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="w-full py-2 border border-zinc-800 hover:border-zinc-600 text-zinc-400 hover:text-white text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-colors"
+              >
+                {loc("✕ Скинути всі фільтри", "✕ Reset all filters", "✕ Сбросить все фильтры")}
+              </button>
+            )}
+          </aside>
+
+          {/* ПРАВАЯ ЧАСТЬ: ИНФО-СТРОКА С АКТИВНЫМИ ФИЛЬТРАМИ + СЕТКА ТОВАРОВ */}
+          <div className="flex-1 min-w-0 w-full space-y-4">
+            {/* Статус-панель каталога над товарами */}
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-[#141414] border border-zinc-800/80 px-3.5 py-2 text-xs font-mono">
+              <div className="flex items-center gap-2 text-zinc-400 text-[11px]">
+                <span>{loc("Показано:", "Showing:", "Показано:")}</span>
+                <strong className="text-white">{sortedProducts.length}</strong>
+                <span>{loc("з", "of", "из")}</span>
+                <span className="text-zinc-300">{products.length}</span>
+              </div>
+
+              {/* Активные теги фильтров с возможностью быстро снять каждый */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {gender !== "All" && gender !== "" && (
+                  <button
+                    onClick={() => handleGenderChange("All")}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-black border border-zinc-700 text-zinc-300 hover:text-white text-[10px] cursor-pointer"
+                    title={loc("Скинути стать", "Clear gender", "Сбросить пол")}
+                  >
+                    <span>{genderTabs.find(g => g.key.toLowerCase() === gender.toLowerCase())?.label || gender}</span>
+                    <span className="text-zinc-500 hover:text-white">✕</span>
+                  </button>
+                )}
+                {size !== "All" && size !== "" && (
+                  <button
+                    onClick={() => setSize("All")}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-black border border-zinc-700 text-zinc-300 hover:text-white text-[10px] cursor-pointer"
+                    title={loc("Скинути розмір", "Clear size", "Сбросить размер")}
+                  >
+                    <span>{loc("Розмір:", "Size:", "Размер:")} {size}</span>
+                    <span className="text-zinc-500 hover:text-white">✕</span>
+                  </button>
+                )}
+                {(value[0] > 0 || value[1] < 10000) && (
+                  <button
+                    onClick={() => setValue([0, 10000])}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-black border border-zinc-700 text-zinc-300 hover:text-white text-[10px] cursor-pointer"
+                    title={loc("Скинути ціну", "Clear price range", "Сбросить цену")}
+                  >
+                    <span>{formatPrice(value[0])} - {formatPrice(value[1])}</span>
+                    <span className="text-zinc-500 hover:text-white">✕</span>
+                  </button>
+                )}
+                {showSavedOnly && (
+                  <button
+                    onClick={() => setShowSavedOnly(false)}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-black border border-zinc-700 text-zinc-300 hover:text-white text-[10px] cursor-pointer"
+                    title={loc("Показати всі", "Show all", "Показать все")}
+                  >
+                    <span>★ {loc("Обране", "Wishlist", "Избранное")}</span>
+                    <span className="text-zinc-500 hover:text-white">✕</span>
+                  </button>
+                )}
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-black border border-zinc-700 text-zinc-300 hover:text-white text-[10px] cursor-pointer"
+                    title={loc("Очистити пошук", "Clear search", "Очистить поиск")}
+                  >
+                    <span>"{searchQuery}"</span>
+                    <span className="text-zinc-500 hover:text-white">✕</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Сетка товаров */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2.5 sm:gap-6 items-stretch">
           {loading ? (
             Array.from({ length: 8 }).map((_, index) => (
               <div key={index} className="bg-[#181818] border border-zinc-800 rounded-none p-3 sm:p-4 animate-pulse">
@@ -903,6 +984,9 @@ export default function Catalog() {
               );
             })
           )}
+        </div>
+
+          </div>
         </div>
 
       </div>
