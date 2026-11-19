@@ -320,16 +320,17 @@ export default function ProductPage({ updateCart }) {
   }
 
   return (
-    <div className="bg-[#131313] text-zinc-100 min-h-screen py-4 sm:py-8 px-3 sm:px-6 lg:px-8 font-mono overflow-x-hidden max-w-full animate-fade-in">
-      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[400px_1fr] xl:grid-cols-[420px_1fr] gap-6 lg:gap-10 items-start max-w-full">
+    <div className="bg-[#131313] text-zinc-100 min-h-screen py-6 sm:py-10 md:py-12 px-4 sm:px-8 md:px-12 lg:px-16 xl:px-24 font-mono overflow-x-hidden max-w-full animate-fade-in">
+      {/* Центрированный аккуратный контейнер с отступами по бокам, не на весь экран */}
+      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[380px_1fr] xl:grid-cols-[400px_1fr] gap-8 lg:gap-12 items-start w-full min-w-0">
 
-        {/* ЛЕВАЯ КОЛОНКА: ГАЛЕРЕЯ (КОМПАКТНАЯ, АККУРАТНО ОТДАЛЕННАЯ, НЕ ГИГАНТСКАЯ) */}
-        <div className="space-y-3 sm:space-y-4 max-w-full overflow-hidden w-full mx-auto">
+        {/* ЛЕВАЯ КОЛОНКА: ГАЛЕРЕЯ (КОМПАКТНАЯ, С ОТДАЛЕНИЕМ И ОТСТУПАМИ) */}
+        <div className="space-y-3 sm:space-y-4 w-full max-w-[380px] mx-auto min-w-0">
 
-          {/* Главное фото с правильным отдалением (p-6 sm:p-8 и ограничение max-w/max-h) */}
+          {/* Главное фото с правильным отдалением (p-6 sm:p-8) */}
           <div
             onClick={() => setLightboxOpen(true)}
-            className="w-full max-w-[390px] sm:max-w-[420px] mx-auto aspect-square max-h-[420px] bg-[#111111] border border-zinc-700 rounded-none flex items-center justify-center relative overflow-hidden group cursor-zoom-in shadow-xl"
+            className="w-full aspect-square max-h-[380px] bg-[#111111] border border-zinc-700 rounded-none flex items-center justify-center relative overflow-hidden group cursor-zoom-in shadow-xl"
           >
             <img
               src={imagesList[activeImageIndex] || safeImg(product?.imageURL)}
@@ -376,7 +377,7 @@ export default function ProductPage({ updateCart }) {
                   key={idx}
                   type="button"
                   onClick={() => setActiveImageIndex(idx)}
-                  className={`w-16 h-20 sm:w-20 sm:h-24 flex-shrink-0 bg-[#111111] rounded-none overflow-hidden p-0 border transition-all cursor-pointer ${idx === activeImageIndex
+                  className={`w-14 h-16 sm:w-16 sm:h-20 shrink-0 bg-[#111111] rounded-none overflow-hidden p-0 border transition-all cursor-pointer ${idx === activeImageIndex
                     ? 'border-white shadow-md'
                     : 'border-zinc-700 opacity-60 hover:opacity-100 hover:border-zinc-400'
                     }`}
@@ -394,7 +395,7 @@ export default function ProductPage({ updateCart }) {
         </div>
 
         {/* ПРАВАЯ КОЛОНКА: ИНФО О ТОВАРЕ */}
-        <div className="bg-[#181818] border border-zinc-700 rounded-none p-4 sm:p-8 space-y-5 sm:space-y-6 shadow-xl max-w-full overflow-hidden">
+        <div className="bg-[#181818] border border-zinc-700 rounded-none p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6 shadow-xl w-full min-w-0 overflow-hidden">
 
           <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2 border-b border-zinc-800">
             <div className="flex flex-wrap items-center gap-1.5 min-w-0">
@@ -441,11 +442,11 @@ export default function ProductPage({ updateCart }) {
           </div>
 
           <div>
-            <h1 className="text-xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight break-words">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight leading-tight break-words">
               {product?.name}
             </h1>
-            <div className="mt-2.5 sm:mt-3 flex items-baseline gap-3">
-              <span className="text-xl sm:text-3xl font-extrabold text-white">
+            <div className="mt-2.5 sm:mt-3 flex items-baseline gap-3 flex-wrap">
+              <span className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white shrink-0 whitespace-nowrap">
                 {product ? formatPrice(product.price) : ""}
               </span>
               <span className="text-xs text-zinc-400">
@@ -564,18 +565,18 @@ export default function ProductPage({ updateCart }) {
                       type="button"
                       disabled={!isAvail}
                       onClick={() => handleSelectSize(single.size)}
-                      className={`w-full py-3.5 px-4 rounded-none font-bold text-xs uppercase tracking-widest font-mono flex items-center justify-between border cursor-pointer transition-all ${!isAvail
+                      className={`w-full py-3 sm:py-3.5 px-3 sm:px-4 rounded-none font-bold text-xs uppercase tracking-widest font-mono flex flex-wrap items-center justify-between gap-2 border cursor-pointer transition-all ${!isAvail
                         ? 'border-red-900/50 bg-red-950/20 text-red-400 line-through cursor-not-allowed'
                         : isSel
                           ? 'border-white bg-white text-black font-black shadow-lg'
                           : 'border-zinc-700 bg-[#121212] text-white hover:border-white'
                         }`}
                     >
-                      <span className="flex items-center gap-2">
+                      <span className="flex items-center gap-2 shrink-0">
                         <span className="text-zinc-400">{t("product_size")}</span>
                         <span className="text-sm font-black underline underline-offset-4">{single.size}</span>
                       </span>
-                      <span className={`text-[11px] font-mono ${isSel ? 'text-zinc-800 font-bold' : (product?.isPreOrder ? 'text-zinc-300' : 'text-emerald-400')}`}>
+                      <span className={`text-[10px] sm:text-[11px] font-mono shrink-0 ${isSel ? 'text-zinc-800 font-bold' : (product?.isPreOrder ? 'text-zinc-300' : 'text-emerald-400')}`}>
                         {product?.isPreOrder ? loc('Передзамовлення (10-14 днів)', 'Pre-order (10-14 days)', 'Предзаказ (10-14 дней)') : (isAvail ? t("product_in_stock") : t("product_out_of_stock"))}
                       </span>
                     </button>
@@ -632,13 +633,13 @@ export default function ProductPage({ updateCart }) {
 
           {/* Плашка информации о предзаказе */}
           {product?.isPreOrder && (
-            <div className="p-4 bg-[#141414] border border-zinc-700 text-zinc-200 text-xs font-mono space-y-2 shadow-md">
-              <div className="font-bold flex items-center justify-between uppercase tracking-wider text-white">
+            <div className="p-3.5 sm:p-4 bg-[#141414] border border-zinc-700 text-zinc-200 text-xs font-mono space-y-2 shadow-md">
+              <div className="font-bold flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 uppercase tracking-wider text-white">
                 <span className="flex items-center gap-1.5">
                   <span className="text-zinc-400">★</span>
                   <span>{loc('ПОЗИЦІЯ ЗА ПЕРЕДЗАМОВЛЕННЯМ', 'PRE-ORDER ITEM', 'ПОЗИЦИЯ ПО ПРЕДЗАКАЗУ')}</span>
                 </span>
-                <span className="text-[10px] px-2 py-0.5 border border-zinc-700 bg-black text-zinc-300">
+                <span className="text-[10px] px-2 py-0.5 border border-zinc-700 bg-black text-zinc-300 w-fit shrink-0">
                   {loc('10–14 РОБОЧИХ ДНІВ', '10–14 BUSINESS DAYS', '10–14 РАБОЧИХ ДНЕЙ')}
                 </span>
               </div>
