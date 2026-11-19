@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../config';
 import { useTranslation } from '../i18n';
@@ -13,7 +13,7 @@ export default function GoogleAuthButton({ onError, onSuccess, text = "signin" }
   const [loading, setLoading] = useState(false);
   const googleBtnContainerRef = useRef(null);
 
-  const handleCredentialResponse = async (response) => {
+  const handleCredentialResponse = useCallback(async (response) => {
     if (!response || !response.credential) {
       if (onError) onError(loc("Не вдалося отримати дані від Google", "Failed to get data from Google", "Не удалось получить данные от Google"));
       return;
@@ -57,11 +57,11 @@ export default function GoogleAuthButton({ onError, onSuccess, text = "signin" }
     } finally {
       setLoading(false);
     }
-  };
+  }, [loc, navigate, onError, onSuccess]);
 
   useEffect(() => {
     const initializeGoogle = () => {
-      if (!window.google?.accounts?.id) return;
+      if (!window.google?.accounts?.id || !googleBtnContainerRef.current) return;
 
       try {
         window.google.accounts.id.initialize({
@@ -71,19 +71,17 @@ export default function GoogleAuthButton({ onError, onSuccess, text = "signin" }
           cancel_on_tap_outside: true
         });
 
-        // Рендерим скрытый стандартный Google Button для резервного клика
-        if (googleBtnContainerRef.current) {
-          googleBtnContainerRef.current.innerHTML = "";
-          window.google.accounts.id.renderButton(googleBtnContainerRef.current, {
-            theme: "filled_black",
-            size: "large",
-            type: "standard",
-            shape: "rectangular",
-            text: text === "signup" ? "signup_with" : "signin_with",
-            width: googleBtnContainerRef.current.offsetWidth || 300,
-            locale: lang === "ua" ? "uk" : lang === "ru" ? "ru" : "en"
-          });
-        }
+        // Рендерим нативную кнопку Google поверх нашего брутального дизайна
+        googleBtnContainerRef.current.innerHTML = "";
+        window.google.accounts.id.renderButton(googleBtnContainerRef.current, {
+          theme: "outline",
+          size: "large",
+          type: "standard",
+          shape: "rectangular",
+          text: text === "signup" ? "signup_with" : "signin_with",
+          width: 380,
+          locale: lang === "ua" ? "uk" : lang === "ru" ? "ru" : "en"
+        });
       } catch (e) {
         console.warn("Failed to initialize Google Auth:", e);
       }
@@ -105,50 +103,15 @@ export default function GoogleAuthButton({ onError, onSuccess, text = "signin" }
         existingScript.addEventListener("load", initializeGoogle);
       }
     }
-  }, [lang, text]);
-
-  const handleCustomButtonClick = () => {
-    playClickSound();
-    if (loading) return;
-
-    if (window.google?.accounts?.id) {
-      // Пытаемся вызвать prompt One Tap или программный клик по отрисованной кнопке
-      try {
-        window.google.accounts.id.prompt((notification) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            // Если One Tap заблокирован или скрыт, кликаем по внутренней кнопке Google
-            const innerBtn = googleBtnContainerRef.current?.querySelector('[role="button"]') ||
-                             googleBtnContainerRef.current?.querySelector('div[tabindex="0"]');
-            if (innerBtn) {
-              innerBtn.click();
-            }
-          }
-        });
-      } catch {
-        const innerBtn = googleBtnContainerRef.current?.querySelector('[role="button"]') ||
-                         googleBtnContainerRef.current?.querySelector('div[tabindex="0"]');
-        if (innerBtn) {
-          innerBtn.click();
-        }
-      }
-    }
-  };
+  }, [lang, text, handleCredentialResponse]);
 
   return (
-    <div className="w-full font-mono">
-      {/* Скрытый нативный контейнер для надежного триггера */}
-      <div 
-        ref={googleBtnContainerRef} 
-        className="hidden" 
-        aria-hidden="true" 
-      />
-
-      {/* Фирменная брутальная кнопка ERASERHEAD в едином стиле сайта */}
-      <button
-        type="button"
-        disabled={loading}
-        onClick={handleCustomButtonClick}
-        className="w-full py-3.5 px-4 bg-[#141414] hover:bg-[#1f1f1f] border border-zinc-700 hover:border-zinc-300 text-white flex items-center justify-center gap-3 transition-all cursor-pointer group active:scale-[0.99] shadow-md disabled:opacity-50"
+    <div className="w-full font-mono relative group overflow-hidden select-none">
+      {/* 1. Наш фирменный брутальный дизайн кнопки ERASERHEAD */}
+      <div
+        className={`w-full py-3.5 px-4 bg-[#141414] group-hover:bg-[#1f1f1f] border border-zinc-700 group-hover:border-zinc-300 text-white flex items-center justify-center gap-3 transition-all cursor-pointer shadow-md pointer-events-none ${
+          loading ? 'opacity-50' : ''
+        }`}
       >
         {/* Аутентичный SVG логотип Google */}
         <svg className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" viewBox="0 0 24 24">
@@ -177,7 +140,16 @@ export default function GoogleAuthButton({ onError, onSuccess, text = "signin" }
             ? loc('ЗАРЕЄСТРУВАТИСЯ ЧЕРЕЗ GOOGLE', 'SIGN UP WITH GOOGLE', 'ЗАРЕГИСТРИРОВАТЬСЯ ЧЕРЕЗ GOOGLE')
             : loc('УВІЙТИ З ДОПОМОГОЮ GOOGLE', 'CONTINUE WITH GOOGLE', 'ВОЙТИ С ПОМОЩЬЮ GOOGLE')}
         </span>
-      </button>
+      </div>
+
+      {/* 2. Прозрачный нативный слой кнопки Google поверх всей площади (срабатывает ровно в 1 клик без двойных нажатий) */}
+      <div 
+        ref={googleBtnContainerRef}
+        onClick={playClickSound}
+        className="absolute inset-0 w-full h-full opacity-[0.0001] cursor-pointer z-10 flex items-center justify-center overflow-hidden scale-[1.35]"
+        style={{ transformOrigin: 'center center' }}
+        title={text === "signup" ? "Sign up with Google" : "Continue with Google"}
+      />
     </div>
   );
 }
