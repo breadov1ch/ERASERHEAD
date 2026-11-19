@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import loadingGif1 from '../assets/loading.gif';
 import { useTranslation } from '../i18n';
 import { API_URL } from '../config';
 import VerificationCodeInput from '../components/VerificationCodeInput';
@@ -40,7 +41,7 @@ export default function RegisterPage() {
     };
   }, [step, countdown]);
 
-  // ШАГ 1: Отправка формы и запрос кода подтверждения
+  // ШАГ 1: Запрос кода подтверждения
   const handleRequestCode = async (e) => {
     e.preventDefault();
     setError('');
@@ -50,7 +51,7 @@ export default function RegisterPage() {
       return;
     }
 
-    if (password && password !== confirmPassword) {
+    if (password !== confirmPassword) {
       setError(t("auth_passwords_mismatch") || loc('Введені паролі не співпадають', 'Passwords do not match', 'Введенные пароли не совпадают'));
       return;
     }
@@ -111,7 +112,7 @@ export default function RegisterPage() {
     }
   };
 
-  // ШАГ 2: Подтверждение введенного 6-значного кода
+  // ШАГ 2: Подтверждение 6-значного кода
   const handleVerifyCode = async (codeToVerify) => {
     const finalCode = (codeToVerify || code).trim();
     if (finalCode.length < 6) {
@@ -149,7 +150,7 @@ export default function RegisterPage() {
         throw new Error(msg);
       }
 
-      // Сохраняем полученные токены авторизации
+      // Сохраняем токены
       if (data?.accessToken) {
         localStorage.setItem("access_token", data.accessToken);
       }
@@ -157,16 +158,13 @@ export default function RegisterPage() {
         localStorage.setItem("refresh_token", data.refreshToken);
       }
 
-      // Оповещаем Header и все компоненты о входе
       window.dispatchEvent(new Event("authChanged"));
-
       triggerToast(t("auth_registration_success") || loc("Реєстрація успішна! Ласкаво просимо.", "Registration successful! Welcome.", "Регистрация успешна! Добро пожаловать."));
       setStep(3);
 
-      // Автоматический переход на главную через 2 секунды
       setTimeout(() => {
         navigate("/");
-      }, 2200);
+      }, 2000);
     } catch (err) {
       setError(typeof err === 'string' ? err : err.message || loc("Помилка перевірки коду", "Code verification error", "Ошибка проверки кода"));
     } finally {
@@ -195,248 +193,234 @@ export default function RegisterPage() {
 
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        throw new Error(data?.message || 'Не вдалося повторно надіслати код');
+        throw new Error(data?.message || loc('Не вдалося повторно надіслати код', 'Failed to resend code', 'Не удалось повторно отправить код'));
       }
 
-      triggerToast(t("auth_code_sent_toast") || "Новий код надіслано на вашу пошту");
+      triggerToast(t("auth_code_sent_toast") || loc("Новий код надіслано на вашу пошту", "New code sent to your email", "Новый код отправлен на вашу почту"));
       setCountdown(60);
       setCanResend(false);
       setCode('');
     } catch (err) {
-      setError(err.message || 'Помилка надсилання коду');
+      setError(err.message || loc('Помилка надсилання коду', 'Error sending code', 'Ошибка отправки кода'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className='min-h-screen flex justify-center bg-[#131313] text-white font-mono'>
-      {/* Левая декоративная колонка */}
-      <div className='hidden lg:flex w-full items-start justify-center flex-col px-[8%] border-r border-zinc-700 bg-[#131313]'>
-        <span className="text-zinc-500 text-xs uppercase tracking-[0.4em] mb-4">
-          DNIPRO // SYSTEM_ACCESS // REGISTRATION
-        </span>
-        <h1 className="font-display text-[7vw] xl:text-[110px] font-black uppercase text-white tracking-[-0.05em] leading-[0.8]">
+    <div className='min-h-screen flex justify-center bg-[#131313] flex'>
+      {/* ЛЕВАЯ ЧАСТЬ: Идентичная странице логина */}
+      <div className='hidden lg:flex w-full items-start justify-center flex-col px-[5%]'>
+        <h1 className="font-display text-[7vw] xl:text-[115px] font-black uppercase text-white 
+               tracking-[-0.06em] leading-[0.75] ml-[-0.05em]">
           ERASERHEAD
         </h1>
-        <p className='max-w-[700px] text-xs text-zinc-400 uppercase tracking-[0.2em] leading-relaxed mt-6'>
-          Curated industrial streetwear archive. Create an access identity to log orders, build your archive, and receive priority drop dispatches.
+        <p className='max-w-[900px] font-mono text-[11px] text-zinc-500 uppercase tracking-[0.15em] leading-relaxed mt-3'>
+          ARCHIVE // INDUSTRIAL APPAREL LAB. <br />
+          DESIGNED & CRAFTED IN DNIPRO, UKRAINE.
         </p>
       </div>
 
-      {/* Правая колонка с интерактивной формой */}
-      <div className='flex items-center justify-center w-full lg:max-w-[620px] p-6 sm:p-14 bg-[#181818] border-l border-zinc-700 shadow-2xl'>
-        <div className='max-w-[440px] w-full'>
+      {/* ПРАВАЯ ЧАСТЬ: Идентичный черный брутальный блок */}
+      <div className='bg-black w-full lg:w-1/2 lg:max-w-[550px] lg:mr-[5%] flex flex-col items-start justify-center p-8 sm:p-14 xl:p-20 border border-zinc-800 shadow-2xl'>
+        
+        {/* ШАГ 1: Форма регистрации */}
+        {step === 1 && (
+          <div className="w-full">
+            <h1 className='text-white text-2xl font-black uppercase tracking-[0.05em]'>
+              {loc('Реєстрація', 'Registration', 'Регистрация')}
+            </h1>
+            <p className='text-zinc-500 uppercase tracking-[0.2em] text-[10px] font-mono mt-1'>
+              {loc('Створення акаунта покупця', 'Create Customer Account', 'Создание аккаунта покупателя')}
+            </p>
 
-          {/* ШАГ 1: Ввод данных регистрации */}
-          {step === 1 && (
-            <div className="animate-fade-in">
-              <span className="text-[10px] text-zinc-500 uppercase tracking-[0.4em] block mb-2 font-mono">
-                ACCESS_INITIALIZATION // STEP_01
-              </span>
-              <h2 className='text-3xl font-black uppercase tracking-tight mb-2'>
-                {t("auth_register_title")}
-              </h2>
-              <p className="text-xs text-zinc-400 mb-8 leading-relaxed">
-                {t("auth_register_subtitle") || "Введіть пошту та пароль. Ми надішлемо одноразовий код підтвердження."}
-              </p>
+            <form className='flex flex-col mt-8 w-full' onSubmit={handleRequestCode}>
+              <label className="font-bold text-zinc-500 text-[10px] uppercase tracking-[0.25em] block">
+                {loc("Ім'я (необов'язково)", 'Name (optional)', 'Имя (необязательно)')}
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="bg-transparent text-zinc-200 font-mono text-sm outline-none placeholder:text-zinc-700 border-b border-zinc-700 focus:border-white py-2 transition-colors"
+                placeholder={loc("Ваше ім'я або нікнейм", "Your name or alias", "Ваше имя или никнейм")}
+              />
+
+              <label className="font-bold text-zinc-500 text-[10px] uppercase tracking-[0.25em] block mt-6">
+                {loc('Електронна пошта', 'Email Address', 'Электронная почта')} *
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-transparent text-zinc-200 font-mono text-sm outline-none placeholder:text-zinc-700 border-b border-zinc-700 focus:border-white py-2 transition-colors"
+                placeholder="user@eraserhead.com"
+              />
+
+              <label className="font-bold text-zinc-500 text-[10px] uppercase tracking-[0.25em] block mt-6">
+                {loc('Пароль (від 6 символів)', 'Password (min 6 chars)', 'Пароль (от 6 символов)')} *
+              </label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="bg-transparent text-zinc-200 font-mono text-sm outline-none placeholder:text-zinc-700 border-b border-zinc-700 focus:border-white py-2 transition-colors"
+                placeholder="•••••••••••"
+              />
+
+              <label className="font-bold text-zinc-500 text-[10px] uppercase tracking-[0.25em] block mt-6">
+                {loc('Підтвердження пароля', 'Confirm Password', 'Подтверждение пароля')} *
+              </label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="bg-transparent text-zinc-200 font-mono text-sm outline-none placeholder:text-zinc-700 border-b border-zinc-700 focus:border-white py-2 transition-colors"
+                placeholder="•••••••••••"
+              />
 
               {error && (
-                <div className="p-3 bg-red-950/60 border border-red-800 text-red-300 text-xs uppercase mb-6 tracking-wider">
-                  {typeof error === 'string' ? error : (error?.message || JSON.stringify(error))}
-                </div>
-              )}
-
-              <form onSubmit={handleRequestCode} className="space-y-5">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-zinc-400 text-[10px] uppercase tracking-widest font-bold">
-                    {t("auth_name")} (OPTIONAL)
-                  </label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Architect_01"
-                    className="bg-[#111111] border border-zinc-700 text-white px-3.5 py-3 text-xs outline-none focus:border-white transition-colors rounded-none font-mono"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-zinc-400 text-[10px] uppercase tracking-widest font-bold">
-                    {t("auth_email")} *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your.email@address.com"
-                    className="bg-[#111111] border border-zinc-700 text-white px-3.5 py-3 text-xs outline-none focus:border-white transition-colors rounded-none font-mono"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-zinc-400 text-[10px] uppercase tracking-widest font-bold">
-                    {t("auth_password")} *
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    minLength={6}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="•••••••• (MIN 6 CHARACTERS)"
-                    className="bg-[#111111] border border-zinc-700 text-white px-3.5 py-3 text-xs outline-none focus:border-white transition-colors rounded-none font-mono"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-zinc-500 text-[10px] uppercase tracking-widest font-bold">
-                    {t("auth_register_confirm_pwd")} *
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    minLength={6}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="bg-black border border-zinc-800 text-white px-3.5 py-3 text-xs outline-none focus:border-white transition-colors rounded-none font-mono"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-white text-black py-4 uppercase text-xs font-black tracking-[0.3em] hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50 mt-6"
-                >
-                  {loading ? (t("auth_sending_code_btn") || loc("НАДСИЛАЄМО КОД...", "SENDING CODE...", "ОТПРАВЛЯЕМ КОД...")) : (t("auth_send_code_btn") || loc("ОТРИМАТИ КОД ПІДТВЕРДЖЕННЯ →", "GET VERIFICATION CODE →", "ПОЛУЧИТЬ КОД ПОДТВЕРЖДЕНИЯ →"))}
-                </button>
-
-                {/* Разделитель ИЛИ */}
-                <div className="relative flex items-center justify-center my-4">
-                  <div className="border-t border-zinc-800 w-full"></div>
-                  <span className="bg-[#181818] px-3 text-[10px] font-mono uppercase tracking-[0.25em] text-zinc-500">
-                    {loc('АБО', 'OR', 'ИЛИ')}
-                  </span>
-                </div>
-
-                {/* Быстрая регистрация через Google */}
-                <GoogleAuthButton 
-                  text="signup"
-                  onError={(msg) => setError(msg)}
-                />
-
-                <div className="pt-4 border-t border-zinc-900 text-center">
-                  <Link
-                    to="/login"
-                    className="text-[10px] text-zinc-500 uppercase tracking-widest hover:text-white transition-colors"
-                  >
-                    {t("auth_have_account")} →
-                  </Link>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* ШАГ 2: Красивый ввод 6-значного кода с почты */}
-          {step === 2 && (
-            <div className="animate-fade-in space-y-6">
-              <div>
-                <span className="text-[10px] text-zinc-500 uppercase tracking-[0.4em] block mb-2 font-mono">
-                  SECURITY_VERIFICATION // STEP_02
+                <span className="text-red-400 text-xs mt-3 block font-mono border border-red-900/60 bg-red-950/30 p-2">
+                  {error}
                 </span>
-                <h2 className='text-2xl sm:text-3xl font-black uppercase tracking-tight text-white'>
-                  {t("auth_verify_title")}
-                </h2>
-                <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-                  {t("auth_verify_subtitle")}
-                </p>
-
-                {/* Плашка с адресом и кнопкой смены */}
-                <div className="mt-3 flex items-center justify-between p-3 bg-[#111111] border border-zinc-700 rounded-none text-xs">
-                  <span className="text-white font-mono font-bold truncate max-w-[240px]">
-                    ✉ {email}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => { setStep(1); setError(''); }}
-                    className="text-[10px] text-zinc-400 hover:text-white uppercase tracking-wider underline cursor-pointer font-mono"
-                  >
-                    {t("auth_change_email")}
-                  </button>
-                </div>
-              </div>
-
-              {error && (
-                <div className="p-3 bg-red-950/60 border border-red-800 text-red-300 text-xs uppercase tracking-wider">
-                  {typeof error === 'string' ? error : (error?.message || JSON.stringify(error))}
-                </div>
               )}
 
-              {/* КРАСИВЫЙ ИНТЕРАКТИВНЫЙ ВВОД КОДА */}
-              <div className="py-2">
-                <VerificationCodeInput
-                  length={6}
-                  value={code}
-                  onChange={setCode}
-                  onComplete={handleVerifyCode}
-                  disabled={loading}
-                  hasError={Boolean(error)}
-                />
-              </div>
-
-              {/* Кнопка подтверждения */}
               <button
-                type="button"
-                disabled={code.length < 6 || loading}
-                onClick={() => handleVerifyCode(code)}
-                className="w-full bg-white text-black py-4 uppercase text-xs font-black tracking-[0.3em] hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                type="submit"
+                disabled={loading}
+                className="w-full bg-white text-black py-4 uppercase font-black tracking-[0.3em] text-xs hover:bg-zinc-200 transition-colors mt-8 flex items-center justify-center cursor-pointer active:scale-[0.99] disabled:opacity-50"
               >
-                {loading ? t("auth_verifying_btn") : t("auth_verify_btn")}
+                {loading ? (
+                  <img src={loadingGif1} className="w-5 h-5" alt="Loading..." />
+                ) : (
+                  loc("Зареєструватися", "Create Account", "Зарегистрироваться")
+                )}
               </button>
 
-              {/* Повторная отправка с таймером */}
-              <div className="pt-2 text-center text-xs font-mono">
-                {canResend ? (
-                  <button
-                    type="button"
-                    onClick={handleResend}
-                    disabled={loading}
-                    className="text-zinc-300 hover:text-white uppercase tracking-wider text-[11px] underline underline-offset-4 cursor-pointer transition-colors"
-                  >
-                    ↻ {t("auth_resend_code")}
-                  </button>
-                ) : (
-                  <span className="text-zinc-500 uppercase tracking-widest text-[10px]">
-                    {t("auth_resend_wait")} 00:{countdown < 10 ? `0${countdown}` : countdown}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ШАГ 3: Успешная верификация и переадресация */}
-          {step === 3 && (
-            <div className="animate-fade-in text-center space-y-6 py-8">
-              <div className="w-16 h-16 border-2 border-white rounded-none mx-auto flex items-center justify-center text-2xl font-black text-white bg-black shadow-[0_0_25px_rgba(255,255,255,0.2)]">
-                ✓
-              </div>
-              <div>
-                <span className="text-[10px] text-zinc-500 uppercase tracking-[0.4em] block mb-2 font-mono">
-                  IDENTITY_VERIFIED // SYSTEM_ONLINE
+              {/* Разделитель ИЛИ */}
+              <div className="relative flex items-center justify-center my-6">
+                <div className="border-t border-zinc-800 w-full"></div>
+                <span className="bg-black px-3 text-[10px] font-mono uppercase tracking-[0.25em] text-zinc-500">
+                  {loc('АБО', 'OR', 'ИЛИ')}
                 </span>
-                <h2 className="text-2xl font-black uppercase text-white tracking-tight">
-                  {t("auth_registration_success")}
-                </h2>
-                <p className="text-xs text-zinc-400 mt-2 font-mono">
-                  Redirecting to archive session...
-                </p>
               </div>
-            </div>
-          )}
 
-        </div>
+              {/* Регистрация через Google */}
+              <GoogleAuthButton 
+                text="signup" 
+                onError={(msg) => setError(msg)} 
+              />
+
+              <div className="flex justify-between items-center pt-6 mt-2 border-t border-zinc-900">
+                <span className="text-zinc-500 text-[10px] font-mono uppercase tracking-widest">
+                  {loc("Вже маєте акаунт?", "Already have an account?", "Уже есть аккаунт?")}
+                </span>
+                <span
+                  onClick={() => navigate('/login')}
+                  className="text-white hover:text-zinc-300 text-[10px] uppercase tracking-widest font-bold border-b border-white pb-0.5 cursor-pointer transition-colors"
+                >
+                  {t("auth_signin_btn") || loc("Увійти", "Sign In", "Войти")}
+                </span>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* ШАГ 2: Подтверждение кода безопасности */}
+        {step === 2 && (
+          <div className="w-full">
+            <h1 className='text-white text-2xl font-black uppercase tracking-[0.05em]'>
+              {loc('Підтвердження коду', 'Security Verification', 'Подтверждение кода')}
+            </h1>
+            <p className='text-zinc-500 uppercase tracking-[0.2em] text-[10px] font-mono mt-1'>
+              {loc('Введіть 6-значний код безпеки', 'Enter 6-digit security code', 'Введите 6-значный код безопасности')}
+            </p>
+
+            <div className="mt-6 w-full flex items-center justify-between p-3 bg-[#111111] border border-zinc-800 text-xs">
+              <span className="text-zinc-300 font-mono text-xs truncate max-w-[240px]">
+                ✉ {email}
+              </span>
+              <button
+                type="button"
+                onClick={() => { setStep(1); setError(''); }}
+                className="text-[10px] text-zinc-500 hover:text-white uppercase tracking-wider underline cursor-pointer font-mono"
+              >
+                {loc('Змінити', 'Change', 'Изменить')}
+              </button>
+            </div>
+
+            {error && (
+              <span className="text-red-400 text-xs mt-3 block font-mono border border-red-900/60 bg-red-950/30 p-2">
+                {error}
+              </span>
+            )}
+
+            <div className="py-6 w-full flex justify-center">
+              <VerificationCodeInput
+                length={6}
+                value={code}
+                onChange={setCode}
+                onComplete={handleVerifyCode}
+                disabled={loading}
+                hasError={Boolean(error)}
+              />
+            </div>
+
+            <button
+              type="button"
+              disabled={code.length < 6 || loading}
+              onClick={() => handleVerifyCode(code)}
+              className="w-full bg-white text-black py-4 uppercase font-black tracking-[0.3em] text-xs hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center active:scale-[0.99]"
+            >
+              {loading ? (
+                <img src={loadingGif1} className="w-5 h-5" alt="Loading..." />
+              ) : (
+                loc("Підтвердити код", "Verify Code", "Подтвердить код")
+              )}
+            </button>
+
+            <div className="pt-4 text-center text-xs font-mono w-full">
+              {canResend ? (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={loading}
+                  className="text-zinc-400 hover:text-white uppercase tracking-wider text-[10px] underline underline-offset-4 cursor-pointer transition-colors"
+                >
+                  ↻ {loc("Надіслати код повторно", "Resend code", "Отправить код повторно")}
+                </button>
+              ) : (
+                <span className="text-zinc-600 uppercase tracking-widest text-[10px]">
+                  {loc("Повторна відправка:", "Resend available in:", "Повторная отправка:")} 00:{countdown < 10 ? `0${countdown}` : countdown}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ШАГ 3: Успешное завершение */}
+        {step === 3 && (
+          <div className="w-full text-center space-y-4 py-8">
+            <div className="w-14 h-14 border border-emerald-500 mx-auto flex items-center justify-center text-2xl font-black text-emerald-400 bg-emerald-950/30">
+              ✓
+            </div>
+            <h1 className='text-white text-2xl font-black uppercase tracking-[0.05em]'>
+              {loc('Реєстрація успішна', 'Registration Successful', 'Регистрация успешна')}
+            </h1>
+            <p className='text-zinc-500 uppercase tracking-[0.2em] text-[10px] font-mono'>
+              {loc('Ласкаво просимо до ERASERHEAD', 'Welcome to ERASERHEAD', 'Добро пожаловать в ERASERHEAD')}
+            </p>
+            <p className="text-xs text-zinc-500 font-mono pt-2">
+              {loc('Перенаправлення...', 'Redirecting...', 'Перенаправление...')}
+            </p>
+          </div>
+        )}
+
       </div>
     </div>
   );
