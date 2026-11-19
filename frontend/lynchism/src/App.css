@@ -160,6 +160,41 @@ button, a {
   opacity: 0.9;
 }
 
+/* Индустриальная лазерная загрузка ERASERHEAD */
+@keyframes eraserheadScan {
+  0% {
+    left: -40%;
+    width: 30%;
+  }
+  50% {
+    left: 35%;
+    width: 50%;
+  }
+  100% {
+    left: 100%;
+    width: 30%;
+  }
+}
+
+.animate-eraserhead-scan {
+  animation: eraserheadScan 1.2s ease-in-out infinite;
+}
+
+@keyframes glitchPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+  50% {
+    opacity: 0.94;
+    text-shadow: -1px 0 rgba(255, 255, 255, 0.35), 1px 0 rgba(120, 120, 120, 0.25);
+  }
+}
+
+.animate-glitch-pulse {
+  animation: glitchPulse 2.2s ease-in-out infinite;
+}
+
 /* Горизонтальный скролл без полосы прокрутки для категорий на смартфонах */
 .no-scrollbar::-webkit-scrollbar {
   display: none !important;
