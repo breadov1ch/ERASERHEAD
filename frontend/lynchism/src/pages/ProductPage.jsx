@@ -1012,9 +1012,10 @@ export default function ProductPage({ updateCart }) {
                 </div>
                 <button
                   onClick={() => setShowSizeGuide(false)}
-                  className="text-zinc-500 hover:text-white text-xs uppercase tracking-wider px-3 py-1.5 rounded-none border border-zinc-800 hover:border-zinc-500 transition-colors cursor-pointer"
+                  className="text-zinc-500 hover:text-white text-xs uppercase tracking-wider px-3 py-1.5 rounded-none border border-zinc-800 hover:border-zinc-500 transition-colors cursor-pointer flex items-center gap-1.5"
                 >
-                  {t("product_close")}
+                  <span>✕</span>
+                  <span>{t("product_close")}</span>
                 </button>
               </div>
 
