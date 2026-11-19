@@ -146,6 +146,14 @@ export default function ProductPage({ updateCart }) {
     }
   })();
 
+  // ИНТЕРАКТИВНЫЙ СЛАЙДЕР С ЖИВЫМ СВАЙПОМ (ТАЧ И МЫШЬ)
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartXRef = useRef(0);
+  const dragStartYRef = useRef(0);
+  const isHorizontalSwipeRef = useRef(false);
+  const hasMovedRef = useRef(false);
+
   const handlePrevImage = (e) => {
     e?.stopPropagation();
     playClickSound();
@@ -158,79 +166,86 @@ export default function ProductPage({ updateCart }) {
     setActiveImageIndex(prev => prev === imagesList.length - 1 ? 0 : prev + 1);
   };
 
-  // СВАЙП ФОТОГРАФИЙ (ТАЧ НА СМАРТФОНЕ И ПЕРЕТАСКИВАНИЕ МЫШЬЮ)
-  const touchStartXRef = useRef(0);
-  const touchStartYRef = useRef(0);
-  const touchEndXRef = useRef(0);
-  const touchEndYRef = useRef(0);
-  const isSwipingRef = useRef(false);
-  const isMouseDownRef = useRef(false);
-
-  const handleTouchStart = (e) => {
+  const onTouchStartGallery = (e) => {
     if (!e.touches || e.touches.length === 0) return;
-    touchStartXRef.current = e.touches[0].clientX;
-    touchStartYRef.current = e.touches[0].clientY;
-    touchEndXRef.current = e.touches[0].clientX;
-    touchEndYRef.current = e.touches[0].clientY;
-    isSwipingRef.current = false;
+    dragStartXRef.current = e.touches[0].clientX;
+    dragStartYRef.current = e.touches[0].clientY;
+    isHorizontalSwipeRef.current = false;
+    hasMovedRef.current = false;
+    setIsDragging(true);
   };
 
-  const handleTouchMove = (e) => {
+  const onTouchMoveGallery = (e) => {
     if (!e.touches || e.touches.length === 0) return;
-    touchEndXRef.current = e.touches[0].clientX;
-    touchEndYRef.current = e.touches[0].clientY;
-    const diffX = Math.abs(touchEndXRef.current - touchStartXRef.current);
-    const diffY = Math.abs(touchEndYRef.current - touchStartYRef.current);
-    if (diffX > 10 && diffX > diffY) {
-      isSwipingRef.current = true;
-    }
-  };
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const diffX = currentX - dragStartXRef.current;
+    const diffY = currentY - dragStartYRef.current;
 
-  const handleTouchEnd = () => {
-    const diffX = touchEndXRef.current - touchStartXRef.current;
-    const diffY = Math.abs(touchEndYRef.current - touchStartYRef.current);
-    const minSwipeDistance = 35; // пикселей для срабатывания свайпа
-
-    if (Math.abs(diffX) > minSwipeDistance && Math.abs(diffX) > diffY) {
-      if (diffX < 0) {
-        handleNextImage(); // Свайп пальцем влево -> следующее фото
-      } else {
-        handlePrevImage(); // Свайп пальцем вправо -> предыдущее фото
+    // Определяем горизонтальный свайп, чтобы не мешать вертикальному скроллу
+    if (!isHorizontalSwipeRef.current && (Math.abs(diffX) > 7 || Math.abs(diffY) > 7)) {
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        isHorizontalSwipeRef.current = true;
       }
-      setTimeout(() => {
-        isSwipingRef.current = false;
-      }, 100);
-    } else {
-      setTimeout(() => {
-        isSwipingRef.current = false;
-      }, 50);
+    }
+
+    if (isHorizontalSwipeRef.current) {
+      hasMovedRef.current = true;
+      // Мягкое натяжение на краях списка
+      let offset = diffX;
+      if ((activeImageIndex === 0 && diffX > 0) || (activeImageIndex === imagesList.length - 1 && diffX < 0)) {
+        offset = diffX * 0.35;
+      }
+      setDragOffset(offset);
     }
   };
 
-  const handleMouseDown = (e) => {
+  const onTouchEndGallery = () => {
+    setIsDragging(false);
+    const threshold = 45; // порог срабатывания свайпа (пиксели)
+
+    if (hasMovedRef.current && Math.abs(dragOffset) > threshold) {
+      if (dragOffset < -threshold) {
+        // Свайп влево -> следующее фото
+        playClickSound();
+        setActiveImageIndex(prev => (prev < imagesList.length - 1 ? prev + 1 : 0));
+      } else if (dragOffset > threshold) {
+        // Свайп вправо -> предыдущее фото
+        playClickSound();
+        setActiveImageIndex(prev => (prev > 0 ? prev - 1 : imagesList.length - 1));
+      }
+    }
+    setDragOffset(0);
+    setTimeout(() => {
+      hasMovedRef.current = false;
+    }, 80);
+  };
+
+  const onMouseDownGallery = (e) => {
     if (e.button !== 0) return;
-    touchStartXRef.current = e.clientX;
-    touchStartYRef.current = e.clientY;
-    touchEndXRef.current = e.clientX;
-    touchEndYRef.current = e.clientY;
-    isMouseDownRef.current = true;
-    isSwipingRef.current = false;
+    dragStartXRef.current = e.clientX;
+    dragStartYRef.current = e.clientY;
+    isHorizontalSwipeRef.current = true;
+    hasMovedRef.current = false;
+    setIsDragging(true);
   };
 
-  const handleMouseMove = (e) => {
-    if (!isMouseDownRef.current) return;
-    touchEndXRef.current = e.clientX;
-    touchEndYRef.current = e.clientY;
-    const diffX = Math.abs(touchEndXRef.current - touchStartXRef.current);
-    if (diffX > 12) {
-      isSwipingRef.current = true;
+  const onMouseMoveGallery = (e) => {
+    if (!isDragging) return;
+    const diffX = e.clientX - dragStartXRef.current;
+    if (Math.abs(diffX) > 6) {
+      hasMovedRef.current = true;
     }
+    let offset = diffX;
+    if ((activeImageIndex === 0 && diffX > 0) || (activeImageIndex === imagesList.length - 1 && diffX < 0)) {
+      offset = diffX * 0.35;
+    }
+    setDragOffset(offset);
   };
 
-  const handleMouseUp = () => {
-    if (!isMouseDownRef.current) return;
-    isMouseDownRef.current = false;
-    handleTouchEnd();
+  const onMouseUpGallery = () => {
+    if (!isDragging) return;
+    onTouchEndGallery();
   };
 
   // Переключение фото стрелками клавиатуры и закрытие по Esc
@@ -415,35 +430,53 @@ export default function ProductPage({ updateCart }) {
         {/* ЛЕВАЯ КОЛОНКА: ГАЛЕРЕЯ (НОРМАЛЬНЫЙ СТАНДАРТНЫЙ РАЗМЕР 3:4 С АККУРАТНЫМИ ОТСТУПАМИ) */}
         <div className="space-y-3 sm:space-y-4 w-full max-w-[500px] mx-auto min-w-0">
 
-          {/* Главное фото товара естественного размера (aspect-[3/4], max-h-[580px]) с поддержкой свайпа */}
+          {/* Главное фото товара: современный плавный слайдер со свайпом */}
           <div
-            onClick={(e) => {
-              if (isSwipingRef.current) {
-                e.stopPropagation();
-                return;
-              }
-              setLightboxOpen(true);
-            }}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
+            onTouchStart={onTouchStartGallery}
+            onTouchMove={onTouchMoveGallery}
+            onTouchEnd={onTouchEndGallery}
+            onMouseDown={onMouseDownGallery}
+            onMouseMove={onMouseMoveGallery}
+            onMouseUp={onMouseUpGallery}
+            onMouseLeave={onMouseUpGallery}
             style={{ touchAction: 'pan-y' }}
-            className="w-full aspect-[3/4] max-h-[580px] bg-[#111111] border border-zinc-700 rounded-none flex items-center justify-center relative overflow-hidden group cursor-zoom-in shadow-xl select-none"
+            className={`w-full aspect-[3/4] max-h-[580px] bg-[#111111] border border-zinc-700 rounded-none relative overflow-hidden group shadow-xl select-none ${
+              isDragging ? 'cursor-grabbing' : 'cursor-grab'
+            }`}
           >
-            <img
-              key={activeImageIndex}
-              src={imagesList[activeImageIndex] || safeImg(product?.imageURL)}
-              alt={product?.name}
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = PLACEHOLDER_SVG;
+            {/* Горизонтальная анимированная лента слайдов */}
+            <div
+              className="flex h-full w-full will-change-transform"
+              style={{
+                transform: `translateX(calc(-${activeImageIndex * 100}% + ${dragOffset}px))`,
+                transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
               }}
-              className="w-full h-full object-contain p-2 sm:p-3 transition-transform duration-300 group-hover:scale-105 pointer-events-none select-none animate-fade-in"
-              draggable="false"
-            />
+            >
+              {imagesList.map((img, idx) => (
+                <div
+                  key={idx}
+                  onClick={(e) => {
+                    if (hasMovedRef.current) {
+                      e.stopPropagation();
+                      return;
+                    }
+                    setLightboxOpen(true);
+                  }}
+                  className="w-full h-full shrink-0 flex items-center justify-center p-2 sm:p-3 relative cursor-zoom-in select-none"
+                >
+                  <img
+                    src={img}
+                    alt={`${product?.name} ${idx + 1}`}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = PLACEHOLDER_SVG;
+                    }}
+                    className="w-full h-full object-contain pointer-events-none select-none transition-transform duration-300 group-hover:scale-105"
+                    draggable="false"
+                  />
+                </div>
+              ))}
+            </div>
 
             {/* Стрелки переключения фото */}
             {imagesList.length > 1 && (
@@ -451,7 +484,7 @@ export default function ProductPage({ updateCart }) {
                 <button
                   type="button"
                   onClick={handlePrevImage}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-none bg-black/80 border border-zinc-700 text-white flex items-center justify-center text-base hover:border-white transition-colors z-10 cursor-pointer"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-none bg-black/80 border border-zinc-700 text-white flex items-center justify-center text-base hover:border-white transition-colors z-10 cursor-pointer btn-press"
                   aria-label="Previous image"
                 >
                   ‹
@@ -459,7 +492,7 @@ export default function ProductPage({ updateCart }) {
                 <button
                   type="button"
                   onClick={handleNextImage}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-none bg-black/80 border border-zinc-700 text-white flex items-center justify-center text-base hover:border-white transition-colors z-10 cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-none bg-black/80 border border-zinc-700 text-white flex items-center justify-center text-base hover:border-white transition-colors z-10 cursor-pointer btn-press"
                   aria-label="Next image"
                 >
                   ›
@@ -467,9 +500,26 @@ export default function ProductPage({ updateCart }) {
               </>
             )}
 
-            <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:right-auto bg-[#111111]/90 px-2.5 py-1 rounded-none text-[10px] sm:text-[11px] text-zinc-300 border border-zinc-700 uppercase tracking-wider truncate">
+            {/* Индикатор текущего фото */}
+            <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:right-auto bg-[#111111]/90 px-2.5 py-1 rounded-none text-[10px] sm:text-[11px] text-zinc-300 border border-zinc-700 uppercase tracking-wider truncate pointer-events-none z-10">
               {t("product_photo")} {activeImageIndex + 1} / {imagesList.length || 1} • {t("product_zoom_tip")}
             </div>
+
+            {/* Современные сегментные полоски-индикаторы сверху */}
+            {imagesList.length > 1 && (
+              <div className="absolute top-2.5 left-0 right-0 flex justify-center gap-1.5 px-4 pointer-events-none z-10">
+                {imagesList.map((_, idx) => (
+                  <div
+                    key={idx}
+                    className={`h-0.5 sm:h-1 rounded-none transition-all duration-300 ${
+                      idx === activeImageIndex
+                        ? 'w-6 sm:w-8 bg-white shadow-sm'
+                        : 'w-2 bg-zinc-600/70'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Миниатюры фото */}
@@ -767,44 +817,59 @@ export default function ProductPage({ updateCart }) {
 
       </div>
 
-      {/* ПОЛНОЭКРАННЫЙ ПРОСМОТР ФОТО (LIGHTBOX) С ПОДДЕРЖКОЙ СВАЙПА */}
+      {/* ПОЛНОЭКРАННЫЙ ПРОСМОТР ФОТО (LIGHTBOX) С ЖИВЫМ СВАЙПОМ */}
       {lightboxOpen && (
         <div
           onClick={() => setLightboxOpen(false)}
-          className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 cursor-zoom-out animate-fade-in select-none"
+          className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 cursor-zoom-out animate-fade-in select-none"
         >
           <div
-            className="relative max-w-4xl max-h-[90vh] flex items-center justify-center select-none"
+            className="relative w-full max-w-4xl h-[85vh] flex items-center justify-center select-none overflow-hidden"
             onClick={(e) => e.stopPropagation()}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
+            onTouchStart={onTouchStartGallery}
+            onTouchMove={onTouchMoveGallery}
+            onTouchEnd={onTouchEndGallery}
+            onMouseDown={onMouseDownGallery}
+            onMouseMove={onMouseMoveGallery}
+            onMouseUp={onMouseUpGallery}
+            onMouseLeave={onMouseUpGallery}
             style={{ touchAction: 'pan-y' }}
           >
-            <img
-              key={`lightbox-${activeImageIndex}`}
-              src={imagesList[activeImageIndex] || product?.imageURL}
-              alt="High-Res Inspection"
-              className="max-w-full max-h-[85vh] object-contain rounded-none border border-zinc-800 shadow-2xl pointer-events-none select-none animate-fade-in"
-              draggable="false"
-            />
+            {/* Горизонтальная лента для лайтбокса */}
+            <div
+              className="flex h-full w-full will-change-transform"
+              style={{
+                transform: `translateX(calc(-${activeImageIndex * 100}% + ${dragOffset}px))`,
+                transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
+              }}
+            >
+              {imagesList.map((img, idx) => (
+                <div key={idx} className="w-full h-full shrink-0 flex items-center justify-center p-2">
+                  <img
+                    src={img}
+                    alt={`High-Res ${idx + 1}`}
+                    className="max-w-full max-h-[85vh] object-contain rounded-none border border-zinc-800 shadow-2xl pointer-events-none select-none"
+                    draggable="false"
+                  />
+                </div>
+              ))}
+            </div>
 
             {imagesList.length > 1 && (
               <>
                 <button
                   type="button"
                   onClick={handlePrevImage}
-                  className="absolute -left-12 sm:-left-16 top-1/2 -translate-y-1/2 w-10 h-10 rounded-none bg-black border border-zinc-700 text-white flex items-center justify-center text-lg hover:border-white transition-colors cursor-pointer"
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-none bg-black/90 border border-zinc-700 text-white flex items-center justify-center text-lg hover:border-white transition-colors cursor-pointer z-20 btn-press"
+                  aria-label="Previous image"
                 >
                   ‹
                 </button>
                 <button
                   type="button"
                   onClick={handleNextImage}
-                  className="absolute -right-12 sm:-right-16 top-1/2 -translate-y-1/2 w-10 h-10 rounded-none bg-black border border-zinc-700 text-white flex items-center justify-center text-lg hover:border-white transition-colors cursor-pointer"
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-none bg-black/90 border border-zinc-700 text-white flex items-center justify-center text-lg hover:border-white transition-colors cursor-pointer z-20 btn-press"
+                  aria-label="Next image"
                 >
                   ›
                 </button>
@@ -813,7 +878,7 @@ export default function ProductPage({ updateCart }) {
 
             <button
               onClick={() => setLightboxOpen(false)}
-              className="absolute -top-12 right-0 bg-black border border-zinc-800 text-zinc-300 hover:text-white px-3 py-1 rounded-none text-xs uppercase tracking-wider font-mono cursor-pointer"
+              className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-black/90 border border-zinc-700 text-zinc-300 hover:text-white px-3 py-1.5 rounded-none text-xs uppercase tracking-wider font-mono cursor-pointer z-20"
             >
               {t("product_close")}
             </button>
