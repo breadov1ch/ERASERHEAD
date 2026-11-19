@@ -273,10 +273,10 @@ export default function Catalog() {
         </div>
 
         {/* ЛИПКАЯ ПАНЕЛЬ ТОЛЬКО КАТЕГОРИЙ ВВЕРХУ (ОСТАЕТСЯ СТАТИЧНОЙ ПРИ СКРОЛЛЕ) */}
-        <div className="sticky top-[47px] sm:top-[51px] z-30 bg-[#131313]/95 backdrop-blur-md border-b border-zinc-800 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-2.5 shadow-xl transition-all">
+        <div className="sticky top-[47px] sm:top-[51px] z-30 bg-[#131313]/95 backdrop-blur-md border-b border-zinc-800 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 shadow-xl transition-all">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-            {/* Горизонтальная линейка категорий */}
-            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 flex-1">
+            {/* Линейка категорий: на мобилке горизонтальный скролл, на планшетах и ПК аккуратный перенос (flex-wrap), чтобы не вылезало за грань */}
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto sm:overflow-visible sm:flex-wrap no-scrollbar py-0.5 flex-1">
               {categoryTabs.map((tab) => {
                 const isTabActive = category.toLowerCase() === tab.key.toLowerCase();
                 const count = categoryCounts[tab.key] ?? 0;
@@ -285,7 +285,7 @@ export default function Catalog() {
                     key={tab.key}
                     type="button"
                     onClick={() => handleCategoryChange(tab.key)}
-                    className={`shrink-0 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider font-mono border transition-all cursor-pointer btn-press flex items-center gap-1.5 ${
+                    className={`shrink-0 px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10.5px] sm:text-[11px] font-bold uppercase tracking-wider font-mono border transition-all cursor-pointer btn-press flex items-center gap-1.5 ${
                       isTabActive
                         ? 'bg-white text-black border-white shadow-md font-black'
                         : 'bg-[#181818] text-zinc-300 border-zinc-800 hover:border-zinc-500 hover:text-white'
@@ -545,7 +545,7 @@ export default function Catalog() {
         <div className="flex flex-col lg:flex-row items-start gap-6 xl:gap-8 pt-2">
 
           {/* ЛЕВЫЙ СТИКИ-САЙДБАР ФИЛЬТРОВ (ДЛЯ ПК) */}
-          <aside className="hidden lg:block w-64 xl:w-72 shrink-0 sticky top-[115px] self-start space-y-4 bg-[#141414] border border-zinc-800 p-4 font-mono text-xs shadow-xl">
+          <aside className="hidden lg:block w-64 xl:w-72 shrink-0 sticky top-[135px] self-start space-y-4 bg-[#141414] border border-zinc-800 p-4 font-mono text-xs shadow-xl">
             {/* Шапка фильтров */}
             <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5">
               <div className="flex items-center gap-2">
