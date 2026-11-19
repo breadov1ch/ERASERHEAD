@@ -1,7 +1,12 @@
 using System;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Mail;
 using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 
@@ -10,6 +15,7 @@ namespace lynchism.Services
     public class EmailService
     {
         private readonly IConfiguration _config;
+        private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
 
         public EmailService(IConfiguration config)
         {
@@ -41,6 +47,78 @@ namespace lynchism.Services
 
         public async Task<bool> SendEmailAsync(string toEmail, string subject, string htmlBody)
         {
+            Console.WriteLine($"\n==================================================");
+            Console.WriteLine($"[DISPATCH EMAIL TO: {toEmail}]");
+            Console.WriteLine($"SUBJECT: {subject}");
+
+            // 1. ПРИОРИТЕТ: HTTP REST API (Resend) - Работает на Render Free, Vercel, AWS без блокировок SMTP портов
+            string resendApiKey = (_config["Resend:ApiKey"] ?? Environment.GetEnvironmentVariable("RESEND_API_KEY") ?? "").Trim();
+            if (!string.IsNullOrWhiteSpace(resendApiKey))
+            {
+                Console.WriteLine($"[EMAIL RELAY]: Отправка через Resend HTTP API (Port 443)...");
+                try
+                {
+                    using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails");
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", resendApiKey);
+                    string from = _config["Resend:From"] ?? "ERASERHEAD <onboarding@resend.dev>";
+                    var payload = new
+                    {
+                        from = from,
+                        to = new[] { toEmail.Trim() },
+                        subject = subject,
+                        html = htmlBody
+                    };
+                    request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+                    var response = await _httpClient.SendAsync(request);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine($"[RESEND SUCCESS]: Письмо успешно отправлено через Resend API для {toEmail}!");
+                        Console.WriteLine($"==================================================\n");
+                        return true;
+                    }
+                    var errBody = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[RESEND ERROR]: Статус {response.StatusCode}: {errBody}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[RESEND EXCEPTION]: {ex.Message}");
+                }
+            }
+
+            // 2. ПРИОРИТЕТ: HTTP REST API (Brevo / Sendinblue) - Также через HTTPS Port 443
+            string brevoApiKey = (_config["Brevo:ApiKey"] ?? Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? "").Trim();
+            if (!string.IsNullOrWhiteSpace(brevoApiKey))
+            {
+                Console.WriteLine($"[EMAIL RELAY]: Отправка через Brevo HTTP API (Port 443)...");
+                try
+                {
+                    using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.brevo.com/v3/smtp/email");
+                    request.Headers.Add("api-key", brevoApiKey);
+                    var payload = new
+                    {
+                        sender = new { name = "ERASERHEAD", email = "eraserhead.store@gmail.com" },
+                        to = new[] { new { email = toEmail.Trim() } },
+                        subject = subject,
+                        htmlContent = htmlBody
+                    };
+                    request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+                    var response = await _httpClient.SendAsync(request);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine($"[BREVO SUCCESS]: Письмо успешно отправлено через Brevo API для {toEmail}!");
+                        Console.WriteLine($"==================================================\n");
+                        return true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[BREVO EXCEPTION]: {ex.Message}");
+                }
+            }
+
+            // 3. ПРИОРИТЕТ: Стандартный SMTP (Gmail, etc.) со строгим таймаутом (5 сек), чтобы не подвешивать сервер при блокировке провайдером
             string smtpHost = _config["Smtp:Host"] ?? Environment.GetEnvironmentVariable("SMTP_HOST") ?? "";
             string smtpPortStr = _config["Smtp:Port"] ?? Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587";
             string smtpUser = _config["Smtp:User"] ?? Environment.GetEnvironmentVariable("SMTP_USER") ?? "";
@@ -48,9 +126,6 @@ namespace lynchism.Services
             string fromEmail = _config["Smtp:From"] ?? Environment.GetEnvironmentVariable("SMTP_FROM") ?? smtpUser;
             if (string.IsNullOrWhiteSpace(fromEmail)) fromEmail = "noreply@eraserhead.store";
 
-            Console.WriteLine($"\n==================================================");
-            Console.WriteLine($"[DISPATCH EMAIL TO: {toEmail}]");
-            Console.WriteLine($"SUBJECT: {subject}");
             if (string.IsNullOrWhiteSpace(smtpHost) || string.IsNullOrWhiteSpace(smtpUser))
             {
                 Console.WriteLine($"[SMTP NOTICE]: SMTP не настроен в appsettings.json. Письмо выведено в консоль.");
@@ -73,8 +148,7 @@ namespace lynchism.Services
                         UseDefaultCredentials = false,
                         Credentials = new NetworkCredential(smtpUser.Trim(), smtpPass.Trim()),
                         EnableSsl = true,
-                        DeliveryMethod = SmtpDeliveryMethod.Network,
-                        Timeout = 15000 // 15 сек таймаут
+                        DeliveryMethod = SmtpDeliveryMethod.Network
                     };
 
                     var mailMessage = new MailMessage
@@ -86,7 +160,17 @@ namespace lynchism.Services
                     };
                     mailMessage.To.Add(toEmail.Trim());
 
-                    await client.SendMailAsync(mailMessage);
+                    // Жесткий таймаут 5 секунд, так как SendMailAsync игнорирует client.Timeout в .NET Core
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    var sendTask = client.SendMailAsync(mailMessage);
+                    var completedTask = await Task.WhenAny(sendTask, Task.Delay(5000, cts.Token));
+
+                    if (completedTask != sendTask)
+                    {
+                        throw new TimeoutException($"SMTP connection timed out after 5 seconds. Cloud host (e.g., Render Free) has blocked outbound SMTP port {port}. Use RESEND_API_KEY for HTTP delivery.");
+                    }
+
+                    await sendTask;
                     Console.WriteLine($"[SMTP SUCCESS]: Письмо успешно доставлено почтовому серверу для {toEmail}!");
                     return true;
                 }

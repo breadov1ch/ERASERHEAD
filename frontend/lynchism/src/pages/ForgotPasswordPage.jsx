@@ -22,12 +22,17 @@ export default function ForgotPasswordPage() {
     setInfo('');
     setLoading(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     try {
       const res = await fetch(`${API_URL}/Client/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() })
+        body: JSON.stringify({ email: email.trim() }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       const text = await res.text();
       let data = null;
@@ -68,6 +73,9 @@ export default function ForgotPasswordPage() {
     setInfo('');
     setLoading(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     try {
       const res = await fetch(`${API_URL}/Client/reset-password`, {
         method: 'POST',
@@ -76,8 +84,10 @@ export default function ForgotPasswordPage() {
           email: email.trim(),
           code: code.trim(),
           newPassword: newPassword
-        })
+        }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       const text = await res.text();
       let data = null;

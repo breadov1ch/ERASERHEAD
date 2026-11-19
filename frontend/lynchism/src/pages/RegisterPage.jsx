@@ -58,6 +58,9 @@ export default function RegisterPage() {
 
     setLoading(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     try {
       const payload = {
         name: name.trim() || email.split('@')[0],
@@ -68,8 +71,10 @@ export default function RegisterPage() {
       const response = await fetch(`${API_URL}/Client/send-register-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       const text = await response.text();
       let data = null;
@@ -178,6 +183,9 @@ export default function RegisterPage() {
     setError('');
     setLoading(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     try {
       const payload = {
         name: name.trim() || email.split('@')[0],
@@ -188,8 +196,10 @@ export default function RegisterPage() {
       const res = await fetch(`${API_URL}/Client/send-register-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
       const data = await res.json().catch(() => null);
       if (!res.ok) {

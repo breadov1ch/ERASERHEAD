@@ -211,8 +211,24 @@ namespace lynchism.Controllers
             string code = _emailService.GenerateResetCode();
             string hash = BCrypt.Net.BCrypt.HashPassword(passwordToSave);
 
+            Console.WriteLine($"\n==================================================");
+            Console.WriteLine($">>> [REGISTER VERIFICATION CODE]: {code} FOR {dto.Email} <<<");
+            Console.WriteLine($"==================================================\n");
+
             _clientService.SavePendingRegistration(dto.Email, clientName, hash, code);
-            await _emailService.SendRegistrationCodeEmailAsync(dto.Email, code, clientName);
+
+            // Отправляем email в фоне, чтобы HTTP ответ клиенту не зависал при задержках SMTP
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _emailService.SendRegistrationCodeEmailAsync(dto.Email, code, clientName);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[REGISTER EMAIL DISPATCH ERROR]: {ex.Message}");
+                }
+            });
 
             return Ok(new 
             { 
@@ -322,8 +338,25 @@ namespace lynchism.Controllers
             }
 
             string code = _emailService.GenerateResetCode();
+
+            Console.WriteLine($"\n==================================================");
+            Console.WriteLine($">>> [PASSWORD RECOVERY CODE]: {code} FOR {dto.Email} <<<");
+            Console.WriteLine($"==================================================\n");
+
             await _clientService.SetResetCode(dto.Email, code);
-            await _emailService.SendPasswordResetEmailAsync(dto.Email, code);
+
+            // Отправляем email в фоне, чтобы HTTP ответ клиенту не зависал при задержках SMTP
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _emailService.SendPasswordResetEmailAsync(dto.Email, code);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[PASSWORD RESET EMAIL DISPATCH ERROR]: {ex.Message}");
+                }
+            });
 
             return Ok(new 
             { 
