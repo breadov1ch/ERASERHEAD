@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import Slider from '@mui/material/Slider';
@@ -10,6 +10,38 @@ import { useTranslation } from '../i18n';
 import { useCurrency } from '../currency';
 import { API_URL } from '../config';
 import { sortSizesDesc } from '../sizeUtils';
+
+export const isProductMatchingCategory = (product, catKey) => {
+  if (!catKey || catKey === "All") return true;
+  const catLower = catKey.toLowerCase();
+  const pCatLower = (product.category || "").toLowerCase();
+  const pName = (product.name || "").toLowerCase();
+
+  if (catLower === "hoodies") {
+    return pCatLower === "hoodies" || /hoodie|худи|худі|zip|зип|зіп/i.test(pName);
+  } else if (catLower === "tshirts") {
+    return pCatLower === "tshirts" || (pCatLower === "tops" && !/hoodie|худи|худі|sweater|свитер|светр|knit/i.test(pName)) || /tee|t-shirt|футболк|топ|майк/i.test(pName);
+  } else if (catLower === "sweatpants") {
+    return pCatLower === "sweatpants" || /sport|track|sweatpant|спортивн|джоггер|jogger/i.test(pName);
+  } else if (catLower === "shorts") {
+    return pCatLower === "shorts" || /short|шорт/i.test(pName);
+  } else if (catLower === "pants") {
+    return pCatLower === "pants" || /jean|denim|pant|джинс|брюк|штани|штаны|flare|baggy|cargo/i.test(pName);
+  } else if (catLower === "sweaters") {
+    return pCatLower === "sweaters" || /sweater|knit|свитшот|світшот|свитер|светр|джемпер|cardigan/i.test(pName);
+  } else if (catLower === "winterjackets") {
+    return pCatLower === "winterjackets" || /winter|пуховик|пух|coat|зимн|зимов|parka|пальто/i.test(pName);
+  } else if (catLower === "midseasonjackets") {
+    return pCatLower === "midseasonjackets" || (pCatLower === "outerwear" && !/windbreaker|ветровк|вітровк|anorak/i.test(pName)) || /jacket|куртк|демисезон|демісезон|leather vest|bomber|бомбер/i.test(pName);
+  } else if (catLower === "windbreakers") {
+    return pCatLower === "windbreakers" || /windbreaker|ветровк|вітровк|анорак|anorak/i.test(pName);
+  } else if (catLower === "headwear") {
+    return pCatLower === "headwear" || pCatLower === "hats" || /hat|cap|beanie|шапка|ушанка|балаклава|кепка|панама|headwear/i.test(pName);
+  } else if (catLower === "accessories") {
+    return pCatLower === "accessories" || /belt|bag|chain|ring|choker|mask|gaiter|scarf|glove|ремень|сумк|цепь|кольцо|чокер|маска|перчатк/i.test(pName);
+  }
+  return pCatLower === catLower;
+};
 
 export default function Catalog() {
   const { formatPrice } = useCurrency();
@@ -172,39 +204,7 @@ export default function Catalog() {
       }
     }
 
-    const catLower = (category || "All").toLowerCase();
-    const pCatLower = (product.category || "").toLowerCase();
-    const pName = (product.name || "").toLowerCase();
-
-    let isCategoryOk = true;
-    if (catLower !== "all" && catLower !== "") {
-      if (catLower === "hoodies") {
-        isCategoryOk = pCatLower === "hoodies" || /hoodie|худи|худі|zip|зип|зіп/i.test(pName);
-      } else if (catLower === "tshirts") {
-        isCategoryOk = pCatLower === "tshirts" || (pCatLower === "tops" && !/hoodie|худи|худі|sweater|свитер|светр|knit/i.test(pName)) || /tee|t-shirt|футболк|топ|майк/i.test(pName);
-      } else if (catLower === "sweatpants") {
-        isCategoryOk = pCatLower === "sweatpants" || /sport|track|sweatpant|спортивн|джоггер|jogger/i.test(pName);
-      } else if (catLower === "shorts") {
-        isCategoryOk = pCatLower === "shorts" || /short|шорт/i.test(pName);
-      } else if (catLower === "pants") {
-        isCategoryOk = pCatLower === "pants" || /jean|denim|pant|джинс|брюк|штани|штаны|flare|baggy|cargo/i.test(pName);
-      } else if (catLower === "sweaters") {
-        isCategoryOk = pCatLower === "sweaters" || /sweater|knit|свитшот|світшот|свитер|светр|джемпер|cardigan/i.test(pName);
-      } else if (catLower === "winterjackets") {
-        isCategoryOk = pCatLower === "winterjackets" || /winter|пуховик|пух|coat|зимн|зимов|parka|пальто/i.test(pName);
-      } else if (catLower === "midseasonjackets") {
-        isCategoryOk = pCatLower === "midseasonjackets" || (pCatLower === "outerwear" && !/windbreaker|ветровк|вітровк|anorak/i.test(pName)) || /jacket|куртк|демисезон|демісезон|leather vest|bomber|бомбер/i.test(pName);
-      } else if (catLower === "windbreakers") {
-        isCategoryOk = pCatLower === "windbreakers" || /windbreaker|ветровк|вітровк|анорак|anorak/i.test(pName);
-      } else if (catLower === "headwear") {
-        isCategoryOk = pCatLower === "headwear" || pCatLower === "hats" || /hat|cap|beanie|шапка|ушанка|балаклава|кепка|панама|headwear/i.test(pName);
-      } else if (catLower === "accessories") {
-        isCategoryOk = pCatLower === "accessories" || /belt|bag|chain|ring|choker|mask|gaiter|scarf|glove|ремень|сумк|цепь|кольцо|чокер|маска|перчатк/i.test(pName);
-      } else {
-        isCategoryOk = pCatLower === catLower;
-      }
-    }
-
+    const isCategoryOk = isProductMatchingCategory(product, category);
     const isSizeOk = size === "All" || size === "" || product.sizes?.some(s => s.size === size && s.quantity > 0);
     const isSearchOk = searchQuery.trim() === "" ||
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -220,26 +220,36 @@ export default function Catalog() {
   );
 
   const genderTabs = [
-    { key: "All", label: t("gender_all") || "Всі" },
-    { key: "Men", label: t("gender_men") || "Чоловіче" },
-    { key: "Women", label: t("gender_women") || "Жіноче" },
-    { key: "Unisex", label: t("gender_unisex") || "Унісекс" }
+    { key: "All", label: t("gender_all") || loc("Всі", "All", "Все") },
+    { key: "Men", label: t("gender_men") || loc("Чоловіче", "Men", "Мужское") },
+    { key: "Women", label: t("gender_women") || loc("Жіноче", "Women", "Женское") },
+    { key: "Unisex", label: t("gender_unisex") || loc("Унісекс", "Unisex", "Унисекс") }
   ];
 
   const categoryTabs = [
-    { key: "All", label: t("catalog_all_cats") },
-    { key: "Hoodies", label: t("cat_hoodies") || "Худі та Зіпери" },
-    { key: "TShirts", label: t("cat_tshirts") || "Футболки" },
-    { key: "Sweatpants", label: t("cat_sweatpants") || "Спортивні штани" },
-    { key: "Shorts", label: t("cat_shorts") || "Шорти" },
-    { key: "Pants", label: t("cat_pants") || "Штани та джинси" },
-    { key: "Sweaters", label: t("cat_sweaters") || "Світшоти та светри" },
-    { key: "WinterJackets", label: t("cat_winter_jackets") || "Зимові пуховики та куртки" },
-    { key: "MidseasonJackets", label: t("cat_midseason_jackets") || "Демісезонні куртки" },
-    { key: "Windbreakers", label: t("cat_windbreakers") || "Вітровки" },
-    { key: "Headwear", label: t("cat_headwear") || "Головні убори" },
-    { key: "Accessories", label: t("cat_accessories") || "Аксесуари" }
+    { key: "All", label: t("catalog_all_cats") || loc("Усі категорії", "All Categories", "Все категории") },
+    { key: "Hoodies", label: t("cat_hoodies") || loc("Худі та Зіпери", "Hoodies & Zippers", "Худи и Зипперы") },
+    { key: "TShirts", label: t("cat_tshirts") || loc("Футболки", "T-Shirts", "Футболки") },
+    { key: "Sweatpants", label: t("cat_sweatpants") || loc("Спортивні штани", "Sweatpants", "Спортивные штаны") },
+    { key: "Shorts", label: t("cat_shorts") || loc("Шорти", "Shorts", "Шорты") },
+    { key: "Pants", label: t("cat_pants") || loc("Штани та джинси", "Pants & Jeans", "Брюки и джинсы") },
+    { key: "Sweaters", label: t("cat_sweaters") || loc("Світшоти та светри", "Sweaters & Knits", "Свитшоты и свитера") },
+    { key: "WinterJackets", label: t("cat_winter_jackets") || loc("Зимові пуховики та куртки", "Winter Jackets", "Зимние пуховики и куртки") },
+    { key: "MidseasonJackets", label: t("cat_midseason_jackets") || loc("Демісезонні куртки", "Midseason Jackets", "Демисезонные куртки") },
+    { key: "Windbreakers", label: t("cat_windbreakers") || loc("Вітровки", "Windbreakers", "Ветровки") },
+    { key: "Headwear", label: t("cat_headwear") || loc("Головні убори", "Headwear & Caps", "Головные уборы") },
+    { key: "Accessories", label: t("cat_accessories") || loc("Аксесуари", "Accessories", "Аксессуары") }
   ];
+
+  const categoryCounts = useMemo(() => {
+    const counts = { All: products.length };
+    categoryTabs.forEach(tab => {
+      if (tab.key !== "All") {
+        counts[tab.key] = products.filter(p => isProductMatchingCategory(p, tab.key)).length;
+      }
+    });
+    return counts;
+  }, [products]);
 
   return (
     <div className="bg-[#131313] text-zinc-100 min-h-screen py-8 px-4 sm:px-6 lg:px-8 font-mono">
@@ -265,10 +275,10 @@ export default function Catalog() {
         {/* ЛИПКАЯ ПАНЕЛЬ ФИЛЬТРАЦИИ И КАТЕГОРИЙ */}
         <div className="sticky top-[47px] sm:top-[51px] z-30 bg-[#141414]/95 backdrop-blur-md border-b border-zinc-800 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 shadow-2xl transition-all duration-300 space-y-2">
           
-          {/* РЯД 1: ВЫБОР ПОЛА (ВСІ / ЧОЛОВІЧЕ / ЖІНОЧЕ / УНІСЕКС) */}
-          <div className="flex items-center justify-between gap-2">
-            {/* На телефоне — 4 симметричные равные кнопки на всю ширину; на ПК — аккуратный компактный блок */}
-            <div className="grid grid-cols-4 w-full sm:w-auto sm:flex items-center gap-1 bg-[#0e0e0e] p-1 border border-zinc-800">
+          {/* РЯД 1: ВЫБОР ПОЛА + БЫСТРЫЙ ПОИСК И СОРТИРОВКА ДЛЯ ПК */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+            {/* Выбор пола */}
+            <div className="grid grid-cols-4 sm:flex items-center gap-1 bg-[#0e0e0e] p-1 border border-zinc-800">
               {genderTabs.map((gTab) => {
                 const isGenderActive = (gender || "All").toLowerCase() === gTab.key.toLowerCase();
                 return (
@@ -276,7 +286,7 @@ export default function Catalog() {
                     key={gTab.key}
                     type="button"
                     onClick={() => handleGenderChange(gTab.key)}
-                    className={`py-1.5 px-2 sm:px-3 text-[10px] sm:text-xs font-bold uppercase tracking-wider font-mono text-center transition-all cursor-pointer btn-press ${
+                    className={`py-1.5 px-2.5 sm:px-3 text-[10px] sm:text-xs font-bold uppercase tracking-wider font-mono text-center transition-all cursor-pointer btn-press ${
                       isGenderActive
                         ? 'bg-white text-black font-black shadow-sm'
                         : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
@@ -288,8 +298,44 @@ export default function Catalog() {
               })}
             </div>
 
-            {/* На десктопе справа: кнопки фильтров и сортировки */}
-            <div className="hidden sm:flex items-center gap-2">
+            {/* На десктопе по центру/справа: быстрый поиск, сортировка и фильтры */}
+            <div className="flex items-center justify-between sm:justify-end gap-2">
+              {/* Быстрый поиск для десктопа */}
+              <div className="hidden lg:flex items-center relative w-52 xl:w-64">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t("catalog_search") || loc("Пошук товару...", "Search items...", "Поиск товара...")}
+                  className="w-full bg-[#0e0e0e] border border-zinc-700 text-white text-xs font-mono px-3 py-1.5 pr-7 outline-none focus:border-white transition-colors placeholder:text-zinc-600"
+                />
+                {searchQuery ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 text-zinc-400 hover:text-white text-xs cursor-pointer font-bold"
+                  >
+                    ✕
+                  </button>
+                ) : (
+                  <span className="absolute right-2 text-zinc-600 text-xs pointer-events-none">⌕</span>
+                )}
+              </div>
+
+              {/* Сортировка цены */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClickSound();
+                  setMinOfMax(prev => prev === 0 ? 1 : 0);
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 bg-[#181818] border border-zinc-700 hover:border-zinc-400 text-zinc-200 text-xs font-mono font-bold uppercase cursor-pointer btn-press transition-colors"
+                title={loc("Сортування за ціною", "Sort by price", "Сортировка по цене")}
+              >
+                <span>{minOfMax === 0 ? loc('Ціна ↓', 'Price ↓', 'Цена ↓') : loc('Ціна ↑', 'Price ↑', 'Цена ↑')}</span>
+              </button>
+
+              {/* Кнопка расширенных фильтров */}
               <button
                 type="button"
                 onClick={() => {
@@ -297,14 +343,14 @@ export default function Catalog() {
                   setFilterPanelOpen(prev => !prev);
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold uppercase tracking-wider border cursor-pointer btn-press transition-colors ${
-                  filterPanelOpen || (activeFiltersCount > 0 && (size !== 'All' || searchQuery || showSavedOnly || value[0] > 0 || value[1] < 10000))
+                  filterPanelOpen || (activeFiltersCount > 0 && (size !== 'All' || showSavedOnly || value[0] > 0 || value[1] < 10000))
                     ? 'bg-white text-black border-white font-black'
                     : 'bg-[#181818] text-zinc-200 border-zinc-700 hover:border-zinc-400 hover:text-white'
                 }`}
-                title="Розширені фільтри (розмір, пошук, ціна)"
+                title={loc("Розширені фільтри (розмір, ціна)", "Advanced filters (size, price)", "Расширенные фильтры (размер, цена)")}
               >
                 <span>⚙</span>
-                <span>{t("catalog_filter_search") || "ФІЛЬТРИ"}</span>
+                <span>{loc("ФІЛЬТРИ", "FILTERS", "ФИЛЬТРЫ")}</span>
                 {activeFiltersCount > 0 && (
                   <span className="px-1.5 py-0.2 bg-black text-white text-[9px] font-bold font-mono border border-zinc-600">
                     {activeFiltersCount}
@@ -312,48 +358,41 @@ export default function Catalog() {
                 )}
               </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  playClickSound();
-                  setMinOfMax(prev => prev === 0 ? 1 : 0);
-                }}
-                className="flex items-center gap-1 px-3 py-1.5 bg-[#181818] border border-zinc-700 hover:border-zinc-400 text-zinc-300 text-xs font-mono font-bold uppercase cursor-pointer btn-press transition-colors"
-                title="Сортування за ціною"
-              >
-                <span>{minOfMax === 0 ? 'Ціна ↓' : 'Ціна ↑'}</span>
-              </button>
-
+              {/* Сброс */}
               {activeFiltersCount > 0 && (
                 <button
                   type="button"
                   onClick={handleResetFilters}
                   className="flex items-center px-2 py-1.5 text-[10px] font-mono text-zinc-400 hover:text-white uppercase tracking-wider cursor-pointer underline"
-                  title="Скинути всі фільтри"
+                  title={loc("Скинути всі фільтри", "Reset all filters", "Сбросить все фильтры")}
                 >
-                  ✕ Скинути
+                  {loc("✕ Скинути", "✕ Reset", "✕ Сбросить")}
                 </button>
               )}
             </div>
           </div>
 
-          {/* РЯД 2: КАТЕГОРИИ С ГЛАДКИМ СКРОЛЛОМ НА ВСЮ ШИРИНУ + КНОПКА ФИЛЬТРОВ ДЛЯ ТЕЛЕФОНА */}
+          {/* РЯД 2: КАТЕГОРИИ: НА ДЕСКТОПЕ ОНИ ОБЕРНУТЫ (flex-wrap) И ВСЁ ВИДНО, НА ТЕЛЕФОНЕ — ПЛАВНЫЙ СКРОЛЛ */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 flex-1">
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto sm:overflow-visible sm:flex-wrap no-scrollbar py-0.5 flex-1">
               {categoryTabs.map((tab) => {
                 const isTabActive = category.toLowerCase() === tab.key.toLowerCase();
+                const count = categoryCounts[tab.key] ?? 0;
                 return (
                   <button
                     key={tab.key}
                     type="button"
                     onClick={() => handleCategoryChange(tab.key)}
-                    className={`shrink-0 px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider font-mono border transition-all cursor-pointer btn-press ${
+                    className={`shrink-0 px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider font-mono border transition-all cursor-pointer btn-press flex items-center gap-1.5 ${
                       isTabActive
                         ? 'bg-white text-black border-white shadow-md font-black'
                         : 'bg-[#181818] text-zinc-300 border-zinc-800 hover:border-zinc-500 hover:text-white'
                     }`}
                   >
-                    {tab.label}
+                    <span>{tab.label}</span>
+                    <span className={`text-[9px] font-mono px-1 py-0.2 ${isTabActive ? 'bg-black text-white' : 'bg-zinc-800 text-zinc-400'}`}>
+                      {count}
+                    </span>
                   </button>
                 );
               })}
@@ -390,7 +429,7 @@ export default function Catalog() {
           <div className="bg-[#161616] border border-zinc-700 p-4 sm:p-5 shadow-2xl animate-fade-in-up space-y-4 font-mono">
             <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-zinc-200 flex items-center gap-1.5">
-                <span>⚙</span> ДЕТАЛЬНІ ФІЛЬТРИ // {sortedProducts.length} ТОВАРІВ
+                <span>⚙</span> {loc('ДЕТАЛЬНІ ФІЛЬТРИ', 'DETAILED FILTERS', 'ДЕТАЛЬНЫЕ ФИЛЬТРЫ')} // {sortedProducts.length} {loc('ТОВАРІВ', 'ITEMS', 'ТОВАРОВ')}
               </span>
               <div className="flex items-center gap-3">
                 {activeFiltersCount > 0 && (
@@ -398,7 +437,7 @@ export default function Catalog() {
                     onClick={handleResetFilters}
                     className="text-[11px] text-zinc-400 hover:text-white uppercase tracking-wider cursor-pointer underline"
                   >
-                    ✕ Скинути все
+                    {loc('✕ Скинути все', '✕ Reset All', '✕ Сбросить все')}
                   </button>
                 )}
                 <button
@@ -450,7 +489,7 @@ export default function Catalog() {
               {/* Диапазон цены (чистый белый слайдер) */}
               <div className="space-y-1">
                 <div className="flex justify-between items-center text-[10px] font-bold uppercase text-zinc-400">
-                  <span>Ціна:</span>
+                  <span>{loc('Ціна:', 'Price:', 'Цена:')}</span>
                   <span className="text-white font-mono">{formatPrice(value[0])} - {formatPrice(value[1])}</span>
                 </div>
                 <div className="px-2">
@@ -499,7 +538,7 @@ export default function Catalog() {
                     ? 'bg-white text-black border-white'
                     : 'bg-black text-zinc-300 border-zinc-700 hover:border-zinc-500 hover:text-white'
                     }`}
-                  title="Показати тільки обране"
+                  title={loc("Показати тільки обране", "Show wishlist only", "Показать только избранное")}
                 >
                   ★ {t("catalog_wishlist_btn")} ({wishlistState.length})
                 </button>
@@ -509,7 +548,7 @@ export default function Catalog() {
                   onClick={() => setFilterPanelOpen(false)}
                   className="bg-white text-black font-black uppercase text-xs py-2 px-4 hover:bg-zinc-200 cursor-pointer"
                 >
-                  Готово
+                  {loc("Готово", "Done", "Готово")}
                 </button>
               </div>
             </div>
@@ -527,21 +566,21 @@ export default function Catalog() {
             className="flex items-center gap-2 text-xs font-mono font-black uppercase tracking-wider text-white cursor-pointer btn-press"
           >
             <span>⚙</span>
-            <span>ФІЛЬТРИ</span>
+            <span>{loc("ФІЛЬТРИ", "FILTERS", "ФИЛЬТРЫ")}</span>
             {activeFiltersCount > 0 && (
               <span className="px-1.5 py-0.5 bg-white text-black text-[10px] font-bold">
                 {activeFiltersCount}
               </span>
             )}
             <span className="text-zinc-600">•</span>
-            <span className="text-zinc-400">{sortedProducts.length} шт.</span>
+            <span className="text-zinc-400">{sortedProducts.length} {loc('шт.', 'pcs', 'шт.')}</span>
           </button>
 
           <button
             type="button"
             onClick={scrollToTop}
             className="pl-3 border-l border-zinc-800 text-zinc-400 hover:text-white text-sm font-bold font-mono cursor-pointer btn-press"
-            title="Нагору"
+            title={loc("Нагору", "To top", "Наверх")}
           >
             ↑
           </button>
@@ -559,7 +598,7 @@ export default function Catalog() {
 
               <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
                 <span className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
-                  <span>⚙</span> ФІЛЬТРИ // {sortedProducts.length} ЗНАЙДЕНО
+                  <span>⚙</span> {loc("ФІЛЬТРИ", "FILTERS", "ФИЛЬТРЫ")} // {sortedProducts.length} {loc("ЗНАЙДЕНО", "FOUND", "НАЙДЕНО")}
                 </span>
                 <button
                   onClick={() => setFilterPanelOpen(false)}
@@ -572,13 +611,13 @@ export default function Catalog() {
               {/* Поиск */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold uppercase text-zinc-400 block tracking-wider">
-                  Пошук за назвою
+                  {loc("Пошук за назвою", "Search by name", "Поиск по названию")}
                 </label>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Введіть назву..."
+                  placeholder={loc("Введіть назву...", "Enter name...", "Введите название...")}
                   className="w-full bg-black border border-zinc-700 text-white p-3 text-xs outline-none focus:border-white font-mono"
                 />
               </div>
@@ -586,7 +625,7 @@ export default function Catalog() {
               {/* Размеры */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold uppercase text-zinc-400 block tracking-wider">
-                  Розмір
+                  {loc("Розмір", "Size", "Размер")}
                 </label>
                 <div className="grid grid-cols-4 gap-1.5">
                   {["All", "ONE SIZE", "S", "M", "L", "XL", "XXL"].map((sz) => (
@@ -605,7 +644,7 @@ export default function Catalog() {
               {/* Диапазон цены */}
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center text-[10px] font-bold uppercase text-zinc-400">
-                  <span>Ціна:</span>
+                  <span>{loc('Ціна:', 'Price:', 'Цена:')}</span>
                   <span className="text-white font-mono">{formatPrice(value[0])} - {formatPrice(value[1])}</span>
                 </div>
                 <div className="px-2">
@@ -645,7 +684,7 @@ export default function Catalog() {
               {/* Сортировка цены */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold uppercase text-zinc-400 block tracking-wider">
-                  Сортування
+                  {loc("Сортування", "Sorting", "Сортировка")}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -653,14 +692,14 @@ export default function Catalog() {
                     className={`p-2.5 text-xs font-bold uppercase border text-center btn-press ${minOfMax === 0 ? 'bg-white text-black border-white' : 'bg-black text-zinc-400 border-zinc-800'
                       }`}
                   >
-                    Спочатку дорожчі ↓
+                    {loc("Спочатку дорожчі ↓", "Price: High to Low ↓", "Сначала дороже ↓")}
                   </button>
                   <button
                     onClick={() => { playClickSound(); setMinOfMax(1); }}
                     className={`p-2.5 text-xs font-bold uppercase border text-center btn-press ${minOfMax === 1 ? 'bg-white text-black border-white' : 'bg-black text-zinc-400 border-zinc-800'
                       }`}
                   >
-                    Спочатку дешевші ↑
+                    {loc("Спочатку дешевші ↑", "Price: Low to High ↑", "Сначала дешевле ↑")}
                   </button>
                 </div>
               </div>
@@ -677,7 +716,7 @@ export default function Catalog() {
                   : 'bg-black text-zinc-300 border-zinc-800'
                   }`}
               >
-                ★ ТІЛЬКИ ОБРАНЕ ({wishlistState.length})
+                ★ {loc("ТІЛЬКИ ОБРАНЕ", "WISHLIST ONLY", "ТОЛЬКО ИЗБРАННОЕ")} ({wishlistState.length})
               </button>
 
               {/* Кнопки применить и сбросить */}
@@ -687,7 +726,7 @@ export default function Catalog() {
                   onClick={() => setFilterPanelOpen(false)}
                   className="w-full py-3.5 bg-white text-black text-xs font-black uppercase tracking-widest hover:bg-zinc-200 cursor-pointer btn-press"
                 >
-                  ПОКАЗАТИ {sortedProducts.length} ТОВАРІВ
+                  {loc(`ПОКАЗАТИ ${sortedProducts.length} ТОВАРІВ`, `SHOW ${sortedProducts.length} ITEMS`, `ПОКАЗАТЬ ${sortedProducts.length} ТОВАРОВ`)}
                 </button>
                 {activeFiltersCount > 0 && (
                   <button
@@ -695,7 +734,7 @@ export default function Catalog() {
                     onClick={handleResetFilters}
                     className="w-full py-2.5 border border-zinc-800 text-zinc-400 hover:text-white text-xs font-bold uppercase tracking-wider cursor-pointer"
                   >
-                    Скинути всі фільтри
+                    {loc("Скинути всі фільтри", "Reset all filters", "Сбросить все фильтры")}
                   </button>
                 )}
               </div>
@@ -714,16 +753,47 @@ export default function Catalog() {
               </div>
             ))
           ) : sortedProducts.length === 0 ? (
-            <div className="col-span-full py-16 text-center space-y-4 border border-zinc-800 bg-[#181818] rounded-none shadow-md">
-              <p className="text-sm text-zinc-300 uppercase tracking-wider">
-                {t("catalog_not_found")}
+            <div className="col-span-full py-16 sm:py-24 px-4 text-center space-y-4 border border-zinc-800 bg-[#161616] shadow-2xl font-mono">
+              <div className="inline-block p-3 border border-zinc-700 bg-black text-zinc-300 text-xs">
+                {category !== 'All' ? (
+                  <span>
+                    {loc('У КАТЕГОРІЇ', 'IN CATEGORY', 'В КАТЕГОРИИ')} <strong className="text-white">"{categoryTabs.find(c => c.key === category)?.label || category}"</strong> {loc('НАРАЗІ НЕМАЄ ТОВАРІВ', 'NO PRODUCTS FOUND', 'ПОКА НЕТ ТОВАРОВ')}
+                  </span>
+                ) : (
+                  <span>{t("catalog_not_found")}</span>
+                )}
+              </div>
+              <p className="text-xs text-zinc-400 uppercase tracking-widest max-w-md mx-auto leading-relaxed">
+                {category !== 'All'
+                  ? loc(
+                      'Ця категорія оновлюється або очікує надходження нового дропу. Перегляньте весь асортимент в один клік:',
+                      'This category is updating or awaiting a new drop. View all available items in one click:',
+                      'Эта категория обновляется или ожидает поступления нового дропа. Посмотрите весь ассортимент в один клик:'
+                    )
+                  : loc(
+                      'Спробуйте змінити критерії пошуку або скинути фільтри.',
+                      'Try modifying search terms or resetting filters.',
+                      'Попробуйте изменить критерии поиска или сбросить фильтры.'
+                    )}
               </p>
-              <button
-                onClick={handleResetFilters}
-                className="bg-white text-black px-6 py-2.5 text-xs font-black uppercase tracking-widest hover:bg-zinc-200 transition-colors btn-press cursor-pointer"
-              >
-                {t("catalog_reset_filters")}
-              </button>
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleCategoryChange('All')}
+                  className="bg-white text-black px-6 py-3 text-xs font-black uppercase tracking-widest hover:bg-zinc-200 transition-all cursor-pointer shadow-lg active:scale-95 btn-press"
+                >
+                  {loc(`ДИВИТИСЬ УСІ ТОВАРИ (${products.length})`, `VIEW ALL ITEMS (${products.length})`, `СМОТРЕТЬ ВСЕ ТОВАРЫ (${products.length})`)}
+                </button>
+                {activeFiltersCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleResetFilters}
+                    className="border border-zinc-700 hover:border-zinc-400 text-zinc-300 hover:text-white px-5 py-3 text-xs font-bold uppercase tracking-widest transition-all cursor-pointer btn-press"
+                  >
+                    {t("catalog_reset_filters")}
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             sortedProducts.map(product => {
@@ -821,10 +891,10 @@ export default function Catalog() {
                       </span>
                       <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-zinc-400 font-medium truncate">
                         <span className="text-zinc-300 font-bold uppercase">
-                          {product.gender === 'Men' ? (t("gender_men") || 'Чоловіче') : product.gender === 'Women' ? (t("gender_women") || 'Жіноче') : (t("gender_unisex") || 'Унісекс')}
+                          {product.gender === 'Men' ? (t("gender_men") || loc('Чоловіче', 'Men', 'Мужское')) : product.gender === 'Women' ? (t("gender_women") || loc('Жіноче', 'Women', 'Женское')) : (t("gender_unisex") || loc('Унісекс', 'Unisex', 'Унисекс'))}
                         </span>
                         <span className="text-zinc-600">•</span>
-                        <span>{product.category}</span>
+                        <span>{categoryTabs.find(c => c.key.toLowerCase() === (product.category || '').toLowerCase())?.label || product.category}</span>
                       </div>
                     </div>
                   </div>

@@ -11,6 +11,7 @@ using System.Text;
 
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 
 // Add services to the container.
 
@@ -82,6 +83,7 @@ builder.Services.AddScoped<CartService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<WayForPayService>();
+builder.Services.AddHttpClient();
 
 builder.Services.AddCors(options =>
 {

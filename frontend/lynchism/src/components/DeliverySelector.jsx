@@ -47,11 +47,14 @@ const POPULAR_CITIES = [
 export const getBranchDescription = (b) => {
   if (!b) return '';
   if (typeof b === 'string') return b;
+  if (typeof b !== 'object') return String(b);
   if (b.description && typeof b.description === 'string') return b.description;
   if (b.Description && typeof b.Description === 'string') return b.Description;
   if (b.name && b.address) return `${b.name} (${b.address}${b.postalCode ? `, ${b.postalCode}` : ''})`;
   if (b.name && typeof b.name === 'string') return b.name;
   if (b.address && typeof b.address === 'string') return b.address;
+  if (b.city && b.address) return `${b.city}, ${b.address}`;
+  if (b.id && typeof b.id === 'string') return b.id;
   return '';
 };
 
@@ -112,7 +115,8 @@ export default function DeliverySelector({
 
   // Проверка закрытых поштоматов (лайфхак: предупреждение о подъездах и закрытой территории)
   const isRestrictedBranch = (desc) => {
-    return /(тільки для мешканців|только для жителей|закрит|закрыт|для співробітників|для сотрудников)/i.test(desc || '');
+    const text = typeof desc === 'string' ? desc : getBranchDescription(desc);
+    return /(тільки для мешканців|только для жителей|закрит|закрыт|для співробітників|для сотрудников)/i.test(text || '');
   };
 
   const isSelectedRestricted = isRestrictedBranch(selectedBranch);
@@ -253,8 +257,9 @@ export default function DeliverySelector({
         if (items.length > 0 && !searchStr) {
           const firstDesc = getBranchDescription(items[0]);
           setSelectedBranch(prev => {
-            if (prev && items.some(w => getBranchDescription(w) === prev)) {
-              return prev; // сохраняем выбор пользователя!
+            const prevStr = typeof prev === 'string' ? prev : getBranchDescription(prev);
+            if (prevStr && items.some(w => getBranchDescription(w) === prevStr)) {
+              return prevStr; // сохраняем выбор пользователя!
             }
             return firstDesc;
           });
@@ -303,8 +308,9 @@ export default function DeliverySelector({
           if (data.branches.length > 0 && !searchStr) {
             const firstDesc = getBranchDescription(data.branches[0]);
             setSelectedBranch(prev => {
-              if (prev && data.branches.some(b => getBranchDescription(b) === prev)) {
-                return prev; // сохраняем выбор пользователя!
+              const prevStr = typeof prev === 'string' ? prev : getBranchDescription(prev);
+              if (prevStr && data.branches.some(b => getBranchDescription(b) === prevStr)) {
+                return prevStr; // сохраняем выбор пользователя!
               }
               return firstDesc;
             });
@@ -399,8 +405,9 @@ export default function DeliverySelector({
     }, 250);
   };
 
-  const handleSelectBranch = (branchDesc) => {
-    setSelectedBranch(branchDesc);
+  const handleSelectBranch = (branch) => {
+    const desc = typeof branch === 'string' ? branch : getBranchDescription(branch);
+    setSelectedBranch(desc);
     setBranchSearch('');
     setIsBranchDropdownOpen(false);
   };
@@ -411,13 +418,18 @@ export default function DeliverySelector({
     let branchValue = '';
 
     if (deliveryType === 'Courier') {
-      branchValue = `вул. ${courierStreet}, буд. ${courierHouse}${courierApartment ? `, кв. ${courierApartment}` : ''}`.trim();
+      branchValue = loc(
+        `вул. ${courierStreet}, буд. ${courierHouse}${courierApartment ? `, кв. ${courierApartment}` : ''}`,
+        `St. ${courierStreet}, bldg. ${courierHouse}${courierApartment ? `, apt. ${courierApartment}` : ''}`,
+        `ул. ${courierStreet}, д. ${courierHouse}${courierApartment ? `, кв. ${courierApartment}` : ''}`
+      ).trim();
       fullAddress = `${selectedCity}, ${branchValue}`;
     } else if (isManualBranch) {
       branchValue = manualBranchText.trim();
       fullAddress = `${selectedCity}, ${branchValue}`;
     } else {
-      branchValue = selectedBranch || branchSearch;
+      const bStr = typeof selectedBranch === 'string' ? selectedBranch : getBranchDescription(selectedBranch);
+      branchValue = bStr || (typeof branchSearch === 'string' ? branchSearch : '');
       fullAddress = `${selectedCity}, ${branchValue}`;
     }
 
@@ -652,7 +664,7 @@ export default function DeliverySelector({
                   type="text"
                   value={courierHouse}
                   onChange={(e) => setCourierHouse(e.target.value)}
-                  placeholder="напр. 15, 24А"
+                  placeholder={loc("напр. 15, 24А", "e.g. 15, 24A", "напр. 15, 24А")}
                   className="w-full font-mono bg-[#111111] border border-zinc-700 text-white p-2.5 text-xs outline-none focus:border-zinc-300"
                   required
                 />
@@ -666,7 +678,7 @@ export default function DeliverySelector({
                   type="text"
                   value={courierApartment}
                   onChange={(e) => setCourierApartment(e.target.value)}
-                  placeholder="напр. 42"
+                  placeholder={loc("напр. 42", "e.g. 42", "напр. 42")}
                   className="w-full font-mono bg-[#111111] border border-zinc-700 text-white p-2.5 text-xs outline-none focus:border-zinc-300"
                 />
               </div>
@@ -736,7 +748,7 @@ export default function DeliverySelector({
                     >
                       <div className="text-xs text-white leading-snug truncate">
                         <span className="text-emerald-400 font-bold mr-1.5">✓</span>
-                        {selectedBranch}
+                        {typeof selectedBranch === 'string' ? selectedBranch : getBranchDescription(selectedBranch)}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-[10px] uppercase text-zinc-400 hover:text-white tracking-wider underline">
@@ -805,7 +817,7 @@ export default function DeliverySelector({
                       branchList.map((b, idx) => {
                         const desc = getBranchDescription(b);
                         if (!desc) return null;
-                        const isCurrent = selectedBranch === desc;
+                        const isCurrent = (typeof selectedBranch === 'string' ? selectedBranch : getBranchDescription(selectedBranch)) === desc;
                         const restricted = isRestrictedBranch(desc) || Boolean(b.isRestricted);
                         const key = b.Ref || b.id || b.Id || `${desc}-${idx}`;
 

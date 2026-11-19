@@ -14,15 +14,21 @@ namespace lynchism.Controllers
         private readonly ClientService _clientService;
         private readonly TokenService _tokenService;
         private readonly EmailService _emailService;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IConfiguration _config;
 
         public ClientController(
             ClientService clientService, 
             TokenService tokenService,
-            EmailService emailService)
+            EmailService emailService,
+            IHttpClientFactory httpClientFactory,
+            IConfiguration config)
         {
             _clientService = clientService;
             _tokenService = tokenService;
             _emailService = emailService;
+            _httpClientFactory = httpClientFactory;
+            _config = config;
         }
 
         [Authorize(Roles = "Admin")]
@@ -259,7 +265,7 @@ namespace lynchism.Controllers
             var token = _tokenService.GenerateToken(newClient);
             var refreshToken = _tokenService.GenerateRefreshToken();
             newClient.RefreshToken = refreshToken;
-            newClient.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(60);
+            newClient.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(90);
             await _clientService.UpdateUserTokens(newClient);
 
             // Приветственное письмо
@@ -354,7 +360,7 @@ namespace lynchism.Controllers
             var newRefreshToken = _tokenService.GenerateRefreshToken();
 
             client.RefreshToken = newRefreshToken;
-            client.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(60);
+            client.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(90);
 
             if (!await _clientService.UpdateUserTokens(client))
             {
@@ -370,6 +376,120 @@ namespace lynchism.Controllers
         {
             if (await _clientService.DeleteClient(id)) return Ok();
             else return BadRequest("Client was not deleted");
+        }
+
+        [AllowAnonymous]
+        [HttpPost("google-login")]
+        public async Task<ActionResult> GoogleLogin([FromBody] GoogleLoginDTO dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto?.IdToken))
+            {
+                return BadRequest(new { message = "IdToken is required." });
+            }
+
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                var tokenInfoUrl = $"https://oauth2.googleapis.com/tokeninfo?id_token={Uri.EscapeDataString(dto.IdToken)}";
+                var response = await client.GetAsync(tokenInfoUrl);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return Unauthorized(new { message = "Invalid Google ID token." });
+                }
+
+                var jsonString = await response.Content.ReadAsStringAsync();
+                using var doc = System.Text.Json.JsonDocument.Parse(jsonString);
+                var root = doc.RootElement;
+
+                // Validate audience
+                string expectedClientId = _config["Google:ClientId"];
+                if (string.IsNullOrWhiteSpace(expectedClientId) || expectedClientId.StartsWith("YOUR_"))
+                {
+                    expectedClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? "591447045837-afqvj278tr1k82gr97qhk4jr6ilkb1t2.apps.googleusercontent.com";
+                }
+                string aud = root.TryGetProperty("aud", out var audProp) ? audProp.GetString() ?? "" : "";
+
+                if (!string.Equals(aud, expectedClientId, StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"[GoogleLogin] Audience mismatch: expected '{expectedClientId}', got '{aud}'");
+                    return Unauthorized(new { message = "Google token audience mismatch." });
+                }
+
+                string email = root.TryGetProperty("email", out var emailProp) ? emailProp.GetString() ?? "" : "";
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    return BadRequest(new { message = "Email could not be verified from Google." });
+                }
+
+                string name = root.TryGetProperty("name", out var nameProp) ? nameProp.GetString() ?? "" : "";
+                string picture = root.TryGetProperty("picture", out var picProp) ? picProp.GetString() ?? "" : "";
+
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    name = email.Split('@')[0];
+                }
+
+                var existingUser = await _clientService.GetClientByEmail(email);
+                Client user;
+
+                if (existingUser != null)
+                {
+                    user = existingUser;
+                    bool updated = false;
+                    if (string.IsNullOrWhiteSpace(user.Name) && !string.IsNullOrWhiteSpace(name))
+                    {
+                        user.Name = name;
+                        updated = true;
+                    }
+                    if (string.IsNullOrWhiteSpace(user.AvatarUrl) && !string.IsNullOrWhiteSpace(picture))
+                    {
+                        user.AvatarUrl = picture;
+                        updated = true;
+                    }
+                    if (updated)
+                    {
+                        await _clientService.UpdateUserTokens(user);
+                    }
+                }
+                else
+                {
+                    user = new Client
+                    {
+                        Name = name,
+                        Email = email,
+                        PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString("N")),
+                        Role = "Client",
+                        AvatarUrl = !string.IsNullOrWhiteSpace(picture) ? picture : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=500&q=80"
+                    };
+                    await _clientService.AddClient(user);
+                }
+
+                var token = _tokenService.GenerateToken(user);
+                var refreshToken = _tokenService.GenerateRefreshToken();
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(90);
+                await _clientService.UpdateUserTokens(user);
+
+                return Ok(new
+                {
+                    accessToken = token,
+                    refreshToken = refreshToken,
+                    user = new ClientDTO
+                    {
+                        Id = user.Id,
+                        Name = user.Name,
+                        Email = user.Email,
+                        Role = user.Role,
+                        AvatarUrl = user.AvatarUrl
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[GoogleLogin Error]: {ex}");
+                return StatusCode(500, new { message = "Error during Google authentication: " + ex.Message });
+            }
         }
 
         [HttpPost("refresh")]
@@ -407,8 +527,8 @@ namespace lynchism.Controllers
             var newRefreshToken = _tokenService.GenerateRefreshToken();
 
             client.RefreshToken = newRefreshToken;
-            // Продлеваем сессию на 60 дней при каждом обновлении
-            client.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(60);
+            // Продлеваем сессию на 90 дней при каждом обновлении
+            client.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(90);
 
             if (!await _clientService.UpdateUserTokens(client))
             {

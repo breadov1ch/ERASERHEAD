@@ -4,3 +4,4 @@ obj/
 *.db-shm
 *.db-wal
 .purge_done
+appsettings.Local.json

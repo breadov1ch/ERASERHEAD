@@ -319,7 +319,7 @@ export default function ProductPage({ updateCart }) {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-none bg-white text-black uppercase tracking-widest font-mono">
-                {product?.gender === 'Men' ? (t("gender_men") || 'ЧОЛОВІЧЕ') : product?.gender === 'Women' ? (t("gender_women") || 'ЖІНОЧЕ') : (t("gender_unisex") || 'УНІСЕКС')}
+                {product?.gender === 'Men' ? (t("gender_men") || loc('ЧОЛОВІЧЕ', 'MEN', 'МУЖСКОЕ')) : product?.gender === 'Women' ? (t("gender_women") || loc('ЖІНОЧЕ', 'WOMEN', 'ЖЕНСКОЕ')) : (t("gender_unisex") || loc('УНІСЕКС', 'UNISEX', 'УНИСЕКС'))}
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-none bg-[#121212] text-zinc-300 uppercase tracking-widest border border-zinc-700 font-mono">
                 {product?.category || t("product_category_default")}

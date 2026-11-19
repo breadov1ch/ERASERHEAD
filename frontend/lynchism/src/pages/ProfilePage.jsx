@@ -29,7 +29,7 @@ export default function ProfilePage() {
   const [imgError, setImgError] = useState(false);
 
   const navigate = useNavigate();
-  const { t, lang } = useTranslation();
+  const { t, lang, loc } = useTranslation();
 
   const fetchMe = async () => {
     const token = localStorage.getItem('access_token');
@@ -171,7 +171,7 @@ export default function ProfilePage() {
       }
 
       if (!response.ok) {
-        let msg = "Не удалось сменить пароль";
+        let msg = loc("Не вдалося змінити пароль", "Failed to change password", "Не удалось сменить пароль");
         if (typeof data === 'string') msg = data;
         else if (data?.message) msg = data.message;
         else if (data?.title) msg = data.title;
@@ -179,12 +179,12 @@ export default function ProfilePage() {
 
         const lower = msg.toLowerCase();
         if (lower.includes("current") || lower.includes("incorrect") || lower.includes("wrong") || lower.includes("неверн") || lower.includes("невірн")) {
-          msg = t("profile_pwd_err_wrong_current") || "Поточний пароль введено невірно";
+          msg = t("profile_pwd_err_wrong_current") || loc("Поточний пароль введено невірно", "Current password is incorrect", "Текущий пароль введен неверно");
         }
         throw new Error(msg);
       }
 
-      setPwdMsg({ text: t("profile_pwd_updated") || "Пароль успішно оновлено", isError: false });
+      setPwdMsg({ text: t("profile_pwd_updated") || loc("Пароль успішно оновлено", "Password updated successfully", "Пароль успешно обновлен"), isError: false });
       setOldPassword('');
       setNewPassword('');
       setTimeout(() => {
@@ -192,7 +192,7 @@ export default function ProfilePage() {
         setPwdMsg({ text: '', isError: false });
       }, 2500);
     } catch (err) {
-      setPwdMsg({ text: typeof err === 'string' ? err : err.message || t("profile_pwd_error") || "Помилка при зміні пароля", isError: true });
+      setPwdMsg({ text: typeof err === 'string' ? err : err.message || t("profile_pwd_error") || loc("Помилка при зміні пароля", "Error changing password", "Ошибка при смене пароля"), isError: true });
     }
   };
 
@@ -468,7 +468,7 @@ export default function ProfilePage() {
                           {getStatusBadge(order.status)}
                         </div>
                         <span className="text-[11px] text-zinc-400 block uppercase tracking-wider">
-                          Дата: {formattedDate}
+                          {loc('Дата:', 'Date:', 'Дата:')} {formattedDate}
                         </span>
                       </div>
 

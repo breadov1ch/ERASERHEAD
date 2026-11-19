@@ -81,12 +81,12 @@ export const refreshTokens = async () => {
 };
 
 /**
- * Фоновый таймер: автоматически обновляет токен каждые 14 минут, 
- * пока пользователь на сайте, и проверяет срок жизни токена при переключении на вкладку.
+ * Фоновый таймер: автоматически обновляет токен в фоновом режиме, 
+ * обеспечивая непрерывную авторизацию на 30–90 дней без случайных выходов.
  */
 export const initTokenRefresher = () => {
-  // Проверка каждые 14 минут (токен живет 15 минут)
-  const REFRESH_INTERVAL_MS = 14 * 60 * 1000;
+  // Периодическое тихое обновление раз в 12 часов (токен живет 30 дней)
+  const REFRESH_INTERVAL_MS = 12 * 60 * 60 * 1000;
 
   const intervalId = setInterval(() => {
     const refreshToken = localStorage.getItem("refresh_token");
@@ -103,7 +103,7 @@ export const initTokenRefresher = () => {
     const lastTime = parseInt(localStorage.getItem("token_timestamp") || "0", 10);
     const elapsed = Date.now() - lastTime;
 
-    // Если прошло больше 14 минут с последнего обновления — тихо обновляем токен
+    // Если прошло больше 12 часов с последнего обновления — тихо обновляем токен
     if (elapsed > REFRESH_INTERVAL_MS) {
       refreshTokens();
     }

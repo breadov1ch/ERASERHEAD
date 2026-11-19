@@ -9,6 +9,7 @@ import { startWayForPayPayment } from '../wayforpay';
 import DeliverySelector from '../components/DeliverySelector';
 
 export default function OrderPostPage({ removeItem }) {
+  const navigate = useNavigate();
   const { t, loc } = useTranslation();
   const { formatPrice } = useCurrency();
   const [cartItems, setCartItems] = useState([]);
@@ -271,8 +272,25 @@ export default function OrderPostPage({ removeItem }) {
             }
           } catch (e) { }
 
-          // Принудительный полный переход для очистки виджета WayForPay
-          window.location.href = `/confirmation/${createdOrderId}?paid=1&status=Approved`;
+          const targetUrl = `/confirmation/${createdOrderId}?paid=1&status=Approved`;
+          try {
+            navigate(targetUrl, {
+              state: {
+                clientCreated: data?.clientCreated,
+                email: data?.email,
+                paid: true,
+                isPrepaid: paymentMethod !== "WayForPay",
+                paymentMethod: paymentMethod
+              }
+            });
+          } catch (navErr) {
+            window.location.href = targetUrl;
+          }
+          setTimeout(() => {
+            if (!window.location.pathname.includes(`/confirmation/${createdOrderId}`)) {
+              window.location.href = targetUrl;
+            }
+          }, 350);
         },
         onDeclined: async () => {
           try {
@@ -302,7 +320,26 @@ export default function OrderPostPage({ removeItem }) {
             }
           } catch (e) { }
 
-          window.location.href = `/confirmation/${createdOrderId}?paid=1&status=Approved`;
+          const targetUrl = `/confirmation/${createdOrderId}?paid=1&status=Approved`;
+          try {
+            navigate(targetUrl, {
+              state: {
+                clientCreated: data?.clientCreated,
+                email: data?.email,
+                paid: true,
+                pending: true,
+                paymentMethod: paymentMethod,
+                isPrepaid: paymentMethod !== "WayForPay"
+              }
+            });
+          } catch (navErr) {
+            window.location.href = targetUrl;
+          }
+          setTimeout(() => {
+            if (!window.location.pathname.includes(`/confirmation/${createdOrderId}`)) {
+              window.location.href = targetUrl;
+            }
+          }, 350);
         },
         onError: async () => {
           try {

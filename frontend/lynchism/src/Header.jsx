@@ -4,13 +4,25 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from './i18n';
 import { useCurrency } from './currency';
 import { API_URL } from './config';
+import { playClickSound } from './soundEffects';
 
 const Header = ({ cartCount }) => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const { lang, setLanguage, t } = useTranslation();
+  const { lang, setLanguage, t, loc } = useTranslation();
   const { currency, setCurrency } = useCurrency();
+  const [tickerDirection, setTickerDirection] = useState(() => {
+    return localStorage.getItem("ticker_dir") || "left";
+  });
+
+  const toggleTickerDirection = (e) => {
+    if (e) e.stopPropagation();
+    const nextDir = tickerDirection === "left" ? "right" : "left";
+    setTickerDirection(nextDir);
+    localStorage.setItem("ticker_dir", nextDir);
+    playClickSound();
+  };
 
   const fetchUser = async () => {
     const token = localStorage.getItem("access_token");
@@ -49,9 +61,26 @@ const Header = ({ cartCount }) => {
 
   return (
     <header className="sticky top-0 z-50 bg-[#141414]/95 border-b border-zinc-700 backdrop-blur-md select-none transition-all duration-300 shadow-md">
-      {/* Бесконечная плавная бегущая строка сверху без разрывов */}
-      <div className="w-full bg-[#1c1c1c] border-b border-zinc-700/80 py-1.5 overflow-hidden select-none whitespace-nowrap">
-        <div className="animate-marquee-smooth flex items-center gap-8 text-[10px] sm:text-[11px] font-bold tracking-[0.25em] text-zinc-300 uppercase font-mono">
+      {/* Бесконечная плавная бегущая строка сверху с управляемым направлением */}
+      <div 
+        onClick={toggleTickerDirection}
+        title={loc(
+          `Напрямок: ${tickerDirection === 'left' ? 'вліво' : 'вправо'}. Натисніть, щоб змінити напрямок`,
+          `Direction: ${tickerDirection === 'left' ? 'left' : 'right'}. Click to reverse`,
+          `Направление: ${tickerDirection === 'left' ? 'влево' : 'вправо'}. Нажмите, чтобы изменить направление`
+        )}
+        className="w-full bg-[#181818] border-b border-zinc-700/80 py-1.5 overflow-hidden select-none whitespace-nowrap cursor-pointer relative group transition-colors hover:bg-[#202020]"
+      >
+        <button
+          type="button"
+          onClick={toggleTickerDirection}
+          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10 flex items-center gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity bg-black/80 hover:bg-black px-2 py-0.5 border border-zinc-700 font-mono text-[9px] uppercase tracking-wider text-zinc-300 hover:text-white cursor-pointer"
+        >
+          <span>{tickerDirection === 'left' ? '⟵' : '⟶'}</span>
+          <span className="hidden sm:inline">{loc('ЗМІНИТИ НАПРЯМОК', 'REVERSE', 'ИЗМЕНИТЬ НАПРАВЛЕНИЕ')}</span>
+        </button>
+
+        <div className={`${tickerDirection === 'right' ? 'animate-marquee-smooth-reverse' : 'animate-marquee-smooth'} flex items-center gap-8 text-[10px] sm:text-[11px] font-bold tracking-[0.25em] text-zinc-300 uppercase font-mono`}>
           <div className="flex shrink-0 items-center gap-8">
             <span>{t("home_ticker")}</span>
             <span>{t("home_ticker")}</span>
@@ -272,7 +301,7 @@ const Header = ({ cartCount }) => {
           {/* Переключатель валюты на мобильном */}
           <div className="pt-4 border-t border-zinc-700 flex items-center justify-between">
             <span className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">
-              Currency / Валюта:
+              {loc('Валюта:', 'Currency:', 'Валюта:')}
             </span>
             <div className="flex border border-zinc-700">
               {['UAH', 'USD', 'EUR'].map((c) => (
@@ -294,7 +323,7 @@ const Header = ({ cartCount }) => {
           {/* Переключатель языка на мобильном */}
           <div className="pt-3 border-t border-zinc-800 flex items-center justify-between">
             <span className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">
-              Language / Мова:
+              {loc('Мова:', 'Language:', 'Язык:')}
             </span>
             <div className="flex border border-zinc-700">
               {['ua', 'ru', 'en'].map((l) => (

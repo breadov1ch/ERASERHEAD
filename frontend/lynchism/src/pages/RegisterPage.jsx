@@ -4,6 +4,7 @@ import { useTranslation } from '../i18n';
 import { API_URL } from '../config';
 import VerificationCodeInput from '../components/VerificationCodeInput';
 import { triggerToast } from '../components/ToastNotification';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1); // 1 = Registration form, 2 = Code verification, 3 = Success
@@ -18,7 +19,7 @@ export default function RegisterPage() {
   const [canResend, setCanResend] = useState(false);
 
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, loc } = useTranslation();
 
   // Таймер обратного отсчета для повторной отправки кода
   useEffect(() => {
@@ -45,12 +46,12 @@ export default function RegisterPage() {
     setError('');
 
     if (password && password.length < 6) {
-      setError(t("auth_password_short") || 'Пароль повинен містити щонайменше 6 символів');
+      setError(t("auth_password_short") || loc('Пароль повинен містити щонайменше 6 символів', 'Password must be at least 6 characters', 'Пароль должен содержать минимум 6 символов'));
       return;
     }
 
     if (password && password !== confirmPassword) {
-      setError(t("auth_passwords_mismatch") || 'Введені паролі не співпадають');
+      setError(t("auth_passwords_mismatch") || loc('Введені паролі не співпадають', 'Passwords do not match', 'Введенные пароли не совпадают'));
       return;
     }
 
@@ -78,7 +79,7 @@ export default function RegisterPage() {
       }
 
       if (!response.ok) {
-        let msg = "Помилка відправки коду. Перевірте введені дані.";
+        let msg = loc("Помилка відправки коду. Перевірте введені дані.", "Error sending code. Check your details.", "Ошибка отправки кода. Проверьте введенные данные.");
         if (typeof data === "string") {
           msg = data;
         } else if (data?.message) {
@@ -93,18 +94,18 @@ export default function RegisterPage() {
             msg.toLowerCase().includes("вже") || 
             msg.toLowerCase().includes("зареєстровано") ||
             msg.toLowerCase().includes("уже существует")) {
-          msg = t("auth_user_exists") || "Користувач з такою поштою вже зареєстрований. Увійдіть або відновіть пароль.";
+          msg = t("auth_user_exists") || loc("Користувач з такою поштою вже зареєстрований.", "User with this email already registered.", "Пользователь с такой почтой уже зарегистрирован.");
         }
         throw new Error(msg);
       }
 
-      triggerToast(t("auth_code_sent_toast") || "Код підтвердження надіслано на вашу пошту");
+      triggerToast(t("auth_code_sent_toast") || loc("Код підтвердження надіслано на вашу пошту", "Verification code sent to your email", "Код подтверждения отправлен на вашу почту"));
       setCountdown(60);
       setCanResend(false);
       setCode('');
       setStep(2);
     } catch (err) {
-      setError(typeof err === 'string' ? err : err.message || "Помилка створення акаунта");
+      setError(typeof err === 'string' ? err : err.message || loc("Помилка створення акаунта", "Account creation error", "Ошибка создания аккаунта"));
     } finally {
       setLoading(false);
     }
@@ -114,7 +115,7 @@ export default function RegisterPage() {
   const handleVerifyCode = async (codeToVerify) => {
     const finalCode = (codeToVerify || code).trim();
     if (finalCode.length < 6) {
-      setError("Введіть повний 6-значний код безпеки");
+      setError(loc("Введіть повний 6-значний код безпеки", "Enter full 6-digit security code", "Введите полный 6-значный код безопасности"));
       return;
     }
 
@@ -140,7 +141,7 @@ export default function RegisterPage() {
       }
 
       if (!response.ok) {
-        let msg = "Невірний код або термін його дії минув.";
+        let msg = loc("Невірний код або термін його дії минув.", "Invalid code or expired.", "Неверный код или срок его действия истек.");
         if (typeof data === "string") msg = data;
         else if (data?.message) msg = data.message;
         else if (data?.title) msg = data.title;
@@ -159,7 +160,7 @@ export default function RegisterPage() {
       // Оповещаем Header и все компоненты о входе
       window.dispatchEvent(new Event("authChanged"));
 
-      triggerToast(t("auth_registration_success") || "Реєстрація успішна! Ласкаво просимо.");
+      triggerToast(t("auth_registration_success") || loc("Реєстрація успішна! Ласкаво просимо.", "Registration successful! Welcome.", "Регистрация успешна! Добро пожаловать."));
       setStep(3);
 
       // Автоматический переход на главную через 2 секунды
@@ -167,7 +168,7 @@ export default function RegisterPage() {
         navigate("/");
       }, 2200);
     } catch (err) {
-      setError(typeof err === 'string' ? err : err.message || "Помилка перевірки коду");
+      setError(typeof err === 'string' ? err : err.message || loc("Помилка перевірки коду", "Code verification error", "Ошибка проверки кода"));
     } finally {
       setLoading(false);
     }
@@ -309,8 +310,22 @@ export default function RegisterPage() {
                   disabled={loading}
                   className="w-full bg-white text-black py-4 uppercase text-xs font-black tracking-[0.3em] hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50 mt-6"
                 >
-                  {loading ? (t("auth_sending_code_btn") || "НАДСИЛАЄМО КОД...") : (t("auth_send_code_btn") || "ОТРИМАТИ КОД ПІДТВЕРДЖЕННЯ →")}
+                  {loading ? (t("auth_sending_code_btn") || loc("НАДСИЛАЄМО КОД...", "SENDING CODE...", "ОТПРАВЛЯЕМ КОД...")) : (t("auth_send_code_btn") || loc("ОТРИМАТИ КОД ПІДТВЕРДЖЕННЯ →", "GET VERIFICATION CODE →", "ПОЛУЧИТЬ КОД ПОДТВЕРЖДЕНИЯ →"))}
                 </button>
+
+                {/* Разделитель ИЛИ */}
+                <div className="relative flex items-center justify-center my-4">
+                  <div className="border-t border-zinc-800 w-full"></div>
+                  <span className="bg-[#181818] px-3 text-[10px] font-mono uppercase tracking-[0.25em] text-zinc-500">
+                    {loc('АБО', 'OR', 'ИЛИ')}
+                  </span>
+                </div>
+
+                {/* Быстрая регистрация через Google */}
+                <GoogleAuthButton 
+                  text="signup"
+                  onError={(msg) => setError(msg)}
+                />
 
                 <div className="pt-4 border-t border-zinc-900 text-center">
                   <Link

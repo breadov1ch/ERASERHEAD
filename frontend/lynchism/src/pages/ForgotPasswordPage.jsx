@@ -6,7 +6,7 @@ import VerificationCodeInput from '../components/VerificationCodeInput';
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, loc } = useTranslation();
 
   const [step, setStep] = useState(1); // 1 = request code, 2 = enter code & new pwd
   const [email, setEmail] = useState('');
@@ -38,9 +38,9 @@ export default function ForgotPasswordPage() {
       }
 
       if (!res.ok) {
-        let msg = 'Не удалось отправить код восстановления';
+        let msg = loc('Не вдалося надіслати код відновлення', 'Failed to dispatch recovery code', 'Не удалось отправить код восстановления');
         if (res.status === 404) {
-          msg = 'Сервер відновлення не знайдено (404). Перевірте підключення до бекенду (localhost:5031).';
+          msg = loc('Сервер відновлення не знайдено (404).', 'Recovery server not found (404).', 'Сервер восстановления не найден (404).');
         } else if (typeof data === 'string') {
           msg = data;
         } else if (data?.message) {
@@ -53,10 +53,10 @@ export default function ForgotPasswordPage() {
         throw new Error(msg);
       }
 
-      setInfo(data?.message || 'Код відновлення надіслано на вашу пошту.');
+      setInfo(data?.message || loc('Код відновлення надіслано на вашу пошту.', 'Recovery code dispatched to your email.', 'Код восстановления отправлен на вашу почту.'));
       setStep(2);
     } catch (err) {
-      setError(typeof err === 'string' ? err : err.message || 'Помилка надсилання коду');
+      setError(typeof err === 'string' ? err : err.message || loc('Помилка надсилання коду', 'Error sending code', 'Ошибка отправки кода'));
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ export default function ForgotPasswordPage() {
       }
 
       if (!res.ok) {
-        let msg = 'Не вдалося скинути пароль';
+        let msg = loc('Не вдалося скинути пароль', 'Failed to reset password', 'Не удалось сбросить пароль');
         if (typeof data === 'string') msg = data;
         else if (data?.message) msg = data.message;
         else if (data?.title) msg = data.title;
@@ -96,10 +96,10 @@ export default function ForgotPasswordPage() {
         throw new Error(msg);
       }
 
-      setInfo(data?.message || 'Пароль успішно змінено.');
+      setInfo(data?.message || loc('Пароль успішно змінено.', 'Password successfully changed.', 'Пароль успешно изменен.'));
       setStep(3);
     } catch (err) {
-      setError(typeof err === 'string' ? err : err.message || 'Помилка скидання пароля');
+      setError(typeof err === 'string' ? err : err.message || loc('Помилка скидання пароля', 'Password reset error', 'Ошибка сброса пароля'));
     } finally {
       setLoading(false);
     }
