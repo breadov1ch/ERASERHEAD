@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { refreshTokens } from '../api';
 import { addToGuestCart } from '../cartManager';
 import { isInWishlist, toggleWishlist } from '../wishlistManager';
@@ -10,16 +10,11 @@ import { useCurrency } from '../currency';
 import { API_URL } from '../config';
 import { sortSizesDesc } from '../sizeUtils';
 
-const PLACEHOLDER_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800" fill="%23111111"><rect width="600" height="800" fill="%23111111"/><line x1="0" y1="0" x2="600" y2="800" stroke="%23222222" stroke-width="1"/><line x1="600" y1="0" x2="0" y2="800" stroke="%23222222" stroke-width="1"/><rect x="150" y="375" width="300" height="50" fill="%23161616" stroke="%23333333"/><text x="300" y="406" font-family="monospace" font-size="13" fill="%23888888" font-weight="bold" text-anchor="middle" letter-spacing="4">ERASERHEAD ARCHIVE</text></svg>`;
-
 export default function ProductPage({ updateCart }) {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const querySize = searchParams.get("size");
   const { formatPrice } = useCurrency();
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
   const [product, setProduct] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState("");
@@ -76,18 +71,9 @@ export default function ProductPage({ updateCart }) {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
-    setNotFound(false);
     fetch(`${API_URL}/Product/${id}`)
-      .then(res => {
-        if (!res.ok) throw new Error("Product not found");
-        return res.json();
-      })
+      .then(res => res.json())
       .then(data => {
-        if (!data || !data.id) {
-          setNotFound(true);
-          return;
-        }
         setProduct(data);
         setActiveImageIndex(0);
         setIsSaved(isInWishlist(id));
@@ -117,20 +103,14 @@ export default function ProductPage({ updateCart }) {
           }
         }
       })
-      .catch(err => {
-        console.error("Error receiving product:", err);
-        setNotFound(true);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      .catch(err => console.error("Error receiving product:", err));
 
     const handleWishlist = () => setIsSaved(isInWishlist(id));
     window.addEventListener("wishlistUpdated", handleWishlist);
     return () => window.removeEventListener("wishlistUpdated", handleWishlist);
-  }, [id, querySize]);
+  }, [id]);
 
-  const safeImg = (url) => (!url || url.includes('ibb.co')) ? PLACEHOLDER_SVG : url;
+  const safeImg = (url) => (!url || url.includes('ibb.co')) ? 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=1000&q=85' : url;
   const rawImages = product?.images && product.images.length > 0
     ? product.images
     : (product?.imageURL ? [product.imageURL] : []);
@@ -259,68 +239,8 @@ export default function ProductPage({ updateCart }) {
     }
   };
 
-  // КРАСИВЫЙ БРУТАЛЬНЫЙ ЛОАДЕР ERASERHEAD ПРИ ВХОДЕ В ТОВАР
-  if (loading) {
-    return (
-      <div className="bg-[#111111] min-h-[85vh] flex flex-col items-center justify-center font-mono text-white px-4 relative overflow-hidden select-none animate-fade-in">
-        {/* Деликатная сетка чертежей */}
-        <div className="absolute inset-0 bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:28px_28px] opacity-25 pointer-events-none"></div>
-
-        <div className="relative z-10 flex flex-col items-center text-center space-y-6 max-w-md w-full">
-          {/* Верхний статус системы */}
-          <div className="flex items-center gap-2 text-[10px] text-zinc-500 tracking-[0.28em] uppercase">
-            <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></span>
-            <span>SYSTEM // APPAREL LAB</span>
-          </div>
-
-          {/* Бренд с эффектом сияния */}
-          <div className="space-y-1.5">
-            <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-[0.25em] sm:tracking-[0.32em] text-white font-mono animate-glitch-pulse">
-              ERASERHEAD
-            </h1>
-            <p className="text-[10px] sm:text-[11px] text-zinc-400 tracking-[0.3em] uppercase">
-              ARCHIVE // SPEC #{id}
-            </p>
-          </div>
-
-          {/* Индустриальный прогресс-бар */}
-          <div className="w-56 sm:w-72 h-1 bg-zinc-900 border border-zinc-800 relative overflow-hidden shadow-inner">
-            <div className="absolute inset-y-0 bg-white animate-eraserhead-scan"></div>
-          </div>
-
-          {/* Нижний терминал */}
-          <div className="flex items-center justify-between w-56 sm:w-72 text-[9px] sm:text-[10px] text-zinc-500 uppercase tracking-widest font-mono">
-            <span>DISPATCH // DNIPRO</span>
-            <span className="animate-pulse text-zinc-300">LOADING...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ЕСЛИ ТОВАР НЕ НАЙДЕН
-  if (notFound || !product) {
-    return (
-      <div className="bg-[#111111] min-h-[75vh] flex flex-col items-center justify-center font-mono text-white px-4 space-y-4 text-center animate-fade-in">
-        <span className="text-4xl sm:text-5xl font-black tracking-widest text-zinc-700">{"// 404"}</span>
-        <h2 className="text-lg sm:text-xl font-bold uppercase tracking-wider text-white">
-          {loc("ТОВАР НЕ ЗНАЙДЕНО", "PRODUCT NOT FOUND", "ТОВАР НЕ НАЙДЕН")}
-        </h2>
-        <p className="text-xs text-zinc-400 max-w-sm tracking-wider uppercase">
-          {loc("Можливо, товар було знято з виробництва або архів оновлюється.", "This product may have been archived or removed.", "Возможно, товар был снят с производства или архив обновляется.")}
-        </p>
-        <button
-          onClick={() => navigate('/catalog')}
-          className="mt-4 px-6 py-2.5 bg-white text-black text-xs font-black uppercase tracking-widest hover:bg-zinc-200 transition-all cursor-pointer btn-press"
-        >
-          ← {loc("ДО КАТАЛОГУ", "BACK TO CATALOG", "В КАТАЛОГ")}
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="bg-[#131313] text-zinc-100 min-h-screen py-4 sm:py-8 px-3 sm:px-6 lg:px-8 font-mono overflow-x-hidden max-w-full animate-fade-in">
+    <div className="bg-[#131313] text-zinc-100 min-h-screen py-4 sm:py-8 px-3 sm:px-6 lg:px-8 font-mono overflow-x-hidden max-w-full">
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 items-start max-w-full">
 
         {/* ЛЕВАЯ КОЛОНКА: ГАЛЕРЕЯ */}
@@ -336,7 +256,7 @@ export default function ProductPage({ updateCart }) {
               alt={product?.name}
               onError={(e) => {
                 e.target.onerror = null;
-                e.target.src = PLACEHOLDER_SVG;
+                e.target.src = 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=1000&q=85';
               }}
               className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-105"
             />

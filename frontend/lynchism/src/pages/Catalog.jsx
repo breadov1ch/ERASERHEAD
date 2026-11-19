@@ -43,8 +43,6 @@ export const isProductMatchingCategory = (product, catKey) => {
   return pCatLower === catLower;
 };
 
-const PLACEHOLDER_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800" fill="%23111111"><rect width="600" height="800" fill="%23111111"/><line x1="0" y1="0" x2="600" y2="800" stroke="%23222222" stroke-width="1"/><line x1="600" y1="0" x2="0" y2="800" stroke="%23222222" stroke-width="1"/><rect x="150" y="375" width="300" height="50" fill="%23161616" stroke="%23333333"/><text x="300" y="406" font-family="monospace" font-size="13" fill="%23888888" font-weight="bold" text-anchor="middle" letter-spacing="4">ERASERHEAD ARCHIVE</text></svg>`;
-
 export default function Catalog() {
   const { formatPrice } = useCurrency();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -880,7 +878,7 @@ export default function Catalog() {
             </div>
           ) : (
             sortedProducts.map(product => {
-              const safeImg = (url) => (!url || url.includes('ibb.co')) ? PLACEHOLDER_SVG : url;
+              const safeImg = (url) => (!url || url.includes('ibb.co')) ? 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=1000&q=85' : url;
               const primaryImg = safeImg(product.imageURL || (product.images && product.images[0]));
               const secondaryImg = (product.images && product.images.length > 1) ? safeImg(product.images[1]) : null;
               const saved = wishlistState.includes(product.id);
@@ -911,7 +909,7 @@ export default function Catalog() {
                       alt={product.name}
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = PLACEHOLDER_SVG;
+                        e.target.src = 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=1000&q=85';
                       }}
                       loading="lazy"
                     />
@@ -922,7 +920,7 @@ export default function Catalog() {
                         alt={`${product.name} view 2`}
                         onError={(e) => {
                           e.target.onerror = null;
-                          e.target.src = PLACEHOLDER_SVG;
+                          e.target.src = 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=1000&q=85';
                         }}
                         loading="lazy"
                       />
