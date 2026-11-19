@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '../i18n';
-import { API_URL } from '../config';
 
 export const getCarriers = (loc) => [
   {
@@ -290,53 +289,13 @@ export default function DeliverySelector({
     }
   }, []);
 
-  // 3. Поиск отделений Meest и Укрпочты через бэкенд
-  const fetchBackendBranches = useCallback(async (carrierId, type, cityName, searchStr) => {
-    if (!cityName) return;
-    setIsBranchLoading(true);
-
-    try {
-      const provider = carrierId === 'Ukrposhta' ? 'ukrposhta' : 'meest';
-      const bType = type === 'Postomat' ? 'Postomat' : 'Warehouse';
-      const url = `${API_URL}/api/delivery/branches?provider=${provider}&type=${bType}&city=${encodeURIComponent(cityName)}&search=${encodeURIComponent(searchStr || '')}`;
-
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && Array.isArray(data.branches)) {
-          setBranchList(data.branches);
-          if (data.branches.length > 0 && !searchStr) {
-            const firstDesc = getBranchDescription(data.branches[0]);
-            setSelectedBranch(prev => {
-              const prevStr = typeof prev === 'string' ? prev : getBranchDescription(prev);
-              if (prevStr && data.branches.some(b => getBranchDescription(b) === prevStr)) {
-                return prevStr; // сохраняем выбор пользователя!
-              }
-              return firstDesc;
-            });
-          }
-          return;
-        }
-      }
-      setBranchList([]);
-    } catch (err) {
-      console.warn('Backend branches fetch error:', err);
-      setBranchList([]);
-    } finally {
-      setIsBranchLoading(false);
-    }
-  }, []);
-
-  // Запуск загрузки отделений при смене города/службы/формата
+  // Запуск загрузки отделений при смене города/службы/формата (ТОЛЬКО для Новой Почты с официальным API)
   useEffect(() => {
     if (deliveryType === 'Courier') return;
+    if (selectedCarrier !== 'Nova Poshta') return;
 
-    if (selectedCarrier === 'Nova Poshta') {
-      fetchNovaPoshtaWarehouses(selectedCity, '', settlementRef, deliveryCityRef, deliveryType);
-    } else {
-      fetchBackendBranches(selectedCarrier, deliveryType, selectedCity, '');
-    }
-  }, [selectedCity, deliveryType, selectedCarrier, settlementRef, deliveryCityRef, fetchNovaPoshtaWarehouses, fetchBackendBranches]);
+    fetchNovaPoshtaWarehouses(selectedCity, '', settlementRef, deliveryCityRef, deliveryType);
+  }, [selectedCity, deliveryType, selectedCarrier, settlementRef, deliveryCityRef, fetchNovaPoshtaWarehouses]);
 
   // Поиск улиц для курьерской доставки через Nova Poshta searchSettlementStreets
   const searchStreets = useCallback(async (query) => {
@@ -399,8 +358,6 @@ export default function DeliverySelector({
     branchDebounceRef.current = setTimeout(() => {
       if (selectedCarrier === 'Nova Poshta') {
         fetchNovaPoshtaWarehouses(selectedCity, val, settlementRef, deliveryCityRef, deliveryType);
-      } else {
-        fetchBackendBranches(selectedCarrier, deliveryType, selectedCity, val);
       }
     }, 250);
   };
@@ -418,19 +375,23 @@ export default function DeliverySelector({
     let branchValue = '';
 
     if (deliveryType === 'Courier') {
+      const hasStreetAndHouse = Boolean(courierStreet.trim() && courierHouse.trim());
       branchValue = loc(
         `вул. ${courierStreet}, буд. ${courierHouse}${courierApartment ? `, кв. ${courierApartment}` : ''}`,
         `St. ${courierStreet}, bldg. ${courierHouse}${courierApartment ? `, apt. ${courierApartment}` : ''}`,
         `ул. ${courierStreet}, д. ${courierHouse}${courierApartment ? `, кв. ${courierApartment}` : ''}`
       ).trim();
-      fullAddress = `${selectedCity}, ${branchValue}`;
+      fullAddress = hasStreetAndHouse ? `${selectedCity}, ${branchValue}` : '';
+    } else if (selectedCarrier !== 'Nova Poshta') {
+      branchValue = manualBranchText.trim();
+      fullAddress = branchValue ? `${selectedCity}, ${branchValue}` : '';
     } else if (isManualBranch) {
       branchValue = manualBranchText.trim();
-      fullAddress = `${selectedCity}, ${branchValue}`;
+      fullAddress = branchValue ? `${selectedCity}, ${branchValue}` : '';
     } else {
       const bStr = typeof selectedBranch === 'string' ? selectedBranch : getBranchDescription(selectedBranch);
       branchValue = bStr || (typeof branchSearch === 'string' ? branchSearch : '');
-      fullAddress = `${selectedCity}, ${branchValue}`;
+      fullAddress = branchValue ? `${selectedCity}, ${branchValue}` : '';
     }
 
     if (onChangeRef.current) {
@@ -684,59 +645,50 @@ export default function DeliverySelector({
               </div>
             </div>
           </div>
+        ) : selectedCarrier !== 'Nova Poshta' ? (
+          /* ВАРИАНТ Б: ДЛЯ УКРПОЧТЫ И MEEST — ПРЯМОЙ ВВОД ОТДЕЛЕНИЯ / ИНДЕКСА / ПОШТОМАТА */
+          <div className="p-3.5 bg-[#141414] border border-zinc-700 space-y-2 font-mono">
+            <label className="text-zinc-500 uppercase tracking-[0.15em] text-[10px] block">
+              {selectedCarrier === 'Ukrposhta'
+                ? loc('Номер відділення або 5-значний поштовий індекс *', 'Branch number or 5-digit postal code *', 'Номер отделения или 5-значный почтовый индекс *')
+                : loc('Номер відділення, поштомату або адреса точки видачі *', 'Meest branch / postomat # or address *', 'Номер отделения, почтомата или адрес точки выдачи *')}
+            </label>
+            <input
+              type="text"
+              value={manualBranchText}
+              onChange={(e) => setManualBranchText(e.target.value)}
+              placeholder={
+                selectedCarrier === 'Ukrposhta'
+                  ? loc('напр. Відділення №5 (індекс 49005) або просп. Гагаріна, 28...', 'e.g. Branch #5 (index 49005) or address...', 'напр. Отделение №5 (индекс 49005) или просп. Гагарина, 28...')
+                  : loc('напр. Відділення №12 (ТЦ Караван) або Поштомат №201...', 'e.g. Branch #12 or Postomat #201...', 'напр. Отделение №12 (ТЦ Караван) или Почтомат №201...')
+              }
+              className="w-full font-mono bg-[#111111] border border-zinc-700 text-white p-2.5 text-xs outline-none focus:border-zinc-300 transition-colors"
+              required
+            />
+            <p className="text-[10px] text-zinc-500 leading-relaxed">
+              {selectedCarrier === 'Ukrposhta'
+                ? loc(
+                    '💡 Вкажіть зручне для вас відділення Укрпошти, 5-значний поштовий індекс або адресу для отримання посилки.',
+                    '💡 Enter your local Ukrposhta branch #, 5-digit postal code or street address.',
+                    '💡 Укажите удобное отделение Укрпочты, 5-значный почтовый индекс или адрес для получения посылки.'
+                  )
+                : loc(
+                    '💡 Вкажіть номер відділення Meest, поштомату або адресу точки видачі.',
+                    '💡 Enter your Meest branch #, postomat # or pickup location.',
+                    '💡 Укажите номер отделения Meest, почтомата или адрес точки выдачи.'
+                  )}
+            </p>
+          </div>
         ) : (
-          /* ВАРИАНТ Б: ВЫБОР ОТДЕЛЕНИЯ ИЛИ ПОШТОМАТА */
+          /* ВАРИАНТ В: ДЛЯ НОВОЙ ПОЧТЫ — ВЫБОР ОТДЕЛЕНИЯ ИЛИ ПОШТОМАТА ЧЕРЕЗ API НОВОЙ ПОЧТЫ */
           <div className="relative" ref={branchDropdownRef}>
             <div className="flex justify-between items-center mb-1">
               <label className="text-zinc-500 uppercase tracking-[0.15em] text-[10px]">
                 {deliveryType === 'Postomat' ? t("checkout_postomat_label") : t("checkout_branch_label")}
               </label>
-
-              {/* Запасной ручной ввод для Укрпочты и Meest (для маленьких сел) */}
-              {(selectedCarrier === 'Ukrposhta' || selectedCarrier === 'Meest') && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsManualBranch(!isManualBranch);
-                    if (!isManualBranch && selectedBranch) {
-                      setManualBranchText(selectedBranch);
-                    }
-                  }}
-                  className="text-[9px] uppercase tracking-wider text-zinc-400 hover:text-white underline cursor-pointer"
-                >
-                  {isManualBranch 
-                    ? loc('📋 Обрати зі списку', '📋 Select from list', '📋 Выбрать из списка')
-                    : loc('✎ Ввести номер чи індекс вручну', '✎ Enter branch / index manually', '✎ Ввести номер или индекс вручную')}
-                </button>
-              )}
             </div>
-
-            {/* Ручной режим ввода для удаленных сел */}
-            {isManualBranch ? (
-              <div className="space-y-1.5">
-                <input
-                  type="text"
-                  value={manualBranchText}
-                  onChange={(e) => setManualBranchText(e.target.value)}
-                  placeholder={
-                    selectedCarrier === 'Ukrposhta'
-                      ? loc('Введіть 5-значний індекс або адресу (напр. 49000 або Відділення №2)...', 'Enter 5-digit postal code or branch...', 'Введите 5-значный индекс или отделение...')
-                      : loc('Введіть номер або адресу точки видачі Meest...', 'Enter branch number or address...', 'Введите номер или адрес точки Meest...')
-                  }
-                  className="w-full font-mono bg-[#111111] border border-zinc-700 text-white p-2.5 text-xs outline-none focus:border-zinc-300"
-                  required
-                />
-                <p className="text-[10px] text-zinc-500">
-                  {loc(
-                    '💡 Для невеликих населених пунктів вкажіть поштовий індекс або номер сільського відділення.',
-                    '💡 For smaller localities, specify the postal code or local branch number.',
-                    '💡 Для небольших населенных пунктов укажите почтовый индекс или номер сельского отделения.'
-                  )}
-                </p>
-              </div>
-            ) : (
-              /* Выбор из реального списка отделений */
-              <div>
+            {/* Выбор из реального списка отделений */}
+            <div>
                 {selectedBranch ? (
                   <div className="space-y-2">
                     <div 
@@ -842,24 +794,10 @@ export default function DeliverySelector({
                         );
                       })
                     ) : (
-                      <div className="p-4 text-center text-zinc-500 font-mono text-xs space-y-2">
-                        <div>
-                          {isBranchLoading 
-                            ? loc('Завантаження списку відділень...', 'Loading branches...', 'Загрузка списка отделений...') 
-                            : loc('Відділень не знайдено за цим запитом.', 'No branches found for this query.', 'Отделений не найдено по этому запросу.')}
-                        </div>
-                        {(selectedCarrier === 'Ukrposhta' || selectedCarrier === 'Meest') && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsManualBranch(true);
-                              setIsBranchDropdownOpen(false);
-                            }}
-                            className="text-[11px] text-white underline cursor-pointer uppercase font-bold"
-                          >
-                            ✎ {loc('Ввести номер або індекс вручну', 'Enter number or index manually', 'Ввести номер или индекс вручную')}
-                          </button>
-                        )}
+                      <div className="p-4 text-center text-zinc-500 font-mono text-xs">
+                        {isBranchLoading 
+                          ? loc('Завантаження списку відділень...', 'Loading branches...', 'Загрузка списка отделений...') 
+                          : loc('Відділень не знайдено за цим запитом.', 'No branches found for this query.', 'Отделений не найдено по этому запросу.')}
                       </div>
                     )}
                   </div>
