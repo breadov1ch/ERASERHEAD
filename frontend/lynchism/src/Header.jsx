@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserIcon, ShoppingBagIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from './i18n';
@@ -16,13 +16,127 @@ const Header = ({ cartCount }) => {
     return localStorage.getItem("ticker_dir") || "left";
   });
 
+  // --- ИНТЕРАКТИВНЫЙ КОНВЕЙЕР (DRAG & CONVEYOR BELT) ---
+  const tickerTrackRef = useRef(null);
+  const tickerHalfRef = useRef(null);
+  const [isTickerDragging, setIsTickerDragging] = useState(false);
+  const tickerOffsetRef = useRef(0);
+  const isDraggingTickerRef = useRef(false);
+  const tickerLastXRef = useRef(0);
+  const tickerLastTimeRef = useRef(0);
+  const tickerMomentumRef = useRef(0);
+  const tickerDirectionRef = useRef(tickerDirection);
+
+  useEffect(() => {
+    tickerDirectionRef.current = tickerDirection;
+  }, [tickerDirection]);
+
   const toggleTickerDirection = (e) => {
     if (e) e.stopPropagation();
     const nextDir = tickerDirection === "left" ? "right" : "left";
     setTickerDirection(nextDir);
     localStorage.setItem("ticker_dir", nextDir);
+    tickerMomentumRef.current = 0;
     playClickSound();
   };
+
+  useEffect(() => {
+    let animId;
+    let lastTime = performance.now();
+    const baseSpeed = 44; // px / sec
+
+    const loop = (now) => {
+      const dt = Math.min(0.08, (now - lastTime) / 1000);
+      lastTime = now;
+
+      const halfW = tickerHalfRef.current?.offsetWidth || 0;
+
+      if (tickerTrackRef.current && halfW > 0) {
+        if (isDraggingTickerRef.current) {
+          // Во время зажатия курсором конвейер подчиняется пальцу/мыши напрямую
+        } else if (Math.abs(tickerMomentumRef.current) > 15) {
+          // Плавное затухание после броска (инерция конвейера)
+          tickerOffsetRef.current += tickerMomentumRef.current * dt;
+          tickerMomentumRef.current *= Math.pow(0.1, dt);
+        } else {
+          // Стабильный непрерывный ход конвейера
+          const dir = tickerDirectionRef.current === 'right' ? 1 : -1;
+          tickerOffsetRef.current += dir * baseSpeed * dt;
+        }
+
+        // Бесшовное бесконечное зацикливание в обе стороны
+        while (tickerOffsetRef.current <= -halfW) {
+          tickerOffsetRef.current += halfW;
+        }
+        while (tickerOffsetRef.current > 0) {
+          tickerOffsetRef.current -= halfW;
+        }
+
+        tickerTrackRef.current.style.transform = `translate3d(${tickerOffsetRef.current}px, 0, 0)`;
+      }
+
+      animId = requestAnimationFrame(loop);
+    };
+
+    animId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animId);
+  }, []);
+
+  const handleTickerStart = (clientX) => {
+    isDraggingTickerRef.current = true;
+    tickerLastXRef.current = clientX;
+    tickerLastTimeRef.current = performance.now();
+    tickerMomentumRef.current = 0;
+    setIsTickerDragging(true);
+  };
+
+  const handleTickerMove = (clientX) => {
+    if (!isDraggingTickerRef.current) return;
+    const now = performance.now();
+    const dx = clientX - tickerLastXRef.current;
+    const dt = Math.max(1, now - tickerLastTimeRef.current) / 1000;
+
+    tickerOffsetRef.current += dx;
+    tickerMomentumRef.current = dx / dt;
+    tickerLastXRef.current = clientX;
+    tickerLastTimeRef.current = now;
+  };
+
+  const handleTickerEnd = () => {
+    if (!isDraggingTickerRef.current) return;
+    isDraggingTickerRef.current = false;
+    setIsTickerDragging(false);
+
+    // Если был сильный бросок конвейера, синхронизируем направление
+    if (tickerMomentumRef.current > 120) {
+      setTickerDirection("right");
+      localStorage.setItem("ticker_dir", "right");
+    } else if (tickerMomentumRef.current < -120) {
+      setTickerDirection("left");
+      localStorage.setItem("ticker_dir", "left");
+    }
+  };
+
+  useEffect(() => {
+    const onMouseMove = (e) => handleTickerMove(e.clientX);
+    const onMouseUp = () => handleTickerEnd();
+    const onTouchMove = (e) => {
+      if (e.touches && e.touches[0]) handleTickerMove(e.touches[0].clientX);
+    };
+    const onTouchEnd = () => handleTickerEnd();
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', onTouchEnd);
+
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+  }, []);
 
   const fetchUser = async () => {
     const token = localStorage.getItem("access_token");
@@ -61,31 +175,52 @@ const Header = ({ cartCount }) => {
 
   return (
     <header className="sticky top-0 z-50 bg-[#141414]/95 border-b border-zinc-700 backdrop-blur-md select-none transition-all duration-300 shadow-md">
-      {/* Бесконечная плавная бегущая строка сверху с управляемым направлением */}
+      {/* Бесконечный интерактивный конвейер сверху (drag & roll) */}
       <div 
-        onClick={toggleTickerDirection}
+        onMouseDown={(e) => {
+          if (e.button === 0) handleTickerStart(e.clientX);
+        }}
+        onTouchStart={(e) => {
+          if (e.touches && e.touches[0]) handleTickerStart(e.touches[0].clientX);
+        }}
+        onDragStart={(e) => e.preventDefault()}
         title={loc(
-          `Напрямок: ${tickerDirection === 'left' ? 'вліво' : 'вправо'}. Натисніть, щоб змінити напрямок`,
-          `Direction: ${tickerDirection === 'left' ? 'left' : 'right'}. Click to reverse`,
-          `Направление: ${tickerDirection === 'left' ? 'влево' : 'вправо'}. Нажмите, чтобы изменить направление`
+          `Конвеєр: потягніть мишею або натисніть кнопку для реверсу`,
+          `Conveyor belt: drag with cursor or click button to reverse`,
+          `Конвейер: потяните мышью или нажмите кнопку для реверса`
         )}
-        className="w-full bg-[#181818] border-b border-zinc-700/80 py-1.5 overflow-hidden select-none whitespace-nowrap cursor-pointer relative group transition-colors hover:bg-[#202020]"
+        className={`w-full bg-[#181818] border-b border-zinc-700/80 py-1.5 overflow-hidden select-none whitespace-nowrap relative group transition-colors hover:bg-[#202020] ${
+          isTickerDragging ? 'cursor-grabbing' : 'cursor-grab'
+        }`}
+        style={{ userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'pan-y' }}
       >
+        {/* Кнопка переключения направления */}
         <button
           type="button"
           onClick={toggleTickerDirection}
-          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10 flex items-center gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity bg-black/80 hover:bg-black px-2 py-0.5 border border-zinc-700 font-mono text-[9px] uppercase tracking-wider text-zinc-300 hover:text-white cursor-pointer"
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 flex items-center gap-1.5 bg-black/85 hover:bg-black px-2.5 py-1 border border-zinc-700 font-mono text-[9px] uppercase tracking-wider text-zinc-300 hover:text-white cursor-pointer shadow-md select-none transition-transform active:scale-95"
         >
           <span>{tickerDirection === 'left' ? '⟵' : '⟶'}</span>
           <span className="hidden sm:inline">{loc('ЗМІНИТИ НАПРЯМОК', 'REVERSE', 'ИЗМЕНИТЬ НАПРАВЛЕНИЕ')}</span>
         </button>
 
-        <div className={`${tickerDirection === 'right' ? 'animate-marquee-smooth-reverse' : 'animate-marquee-smooth'} flex items-center gap-8 text-[10px] sm:text-[11px] font-bold tracking-[0.25em] text-zinc-300 uppercase font-mono`}>
-          <div className="flex shrink-0 items-center gap-8">
+        {/* Движущаяся лента конвейера с аппаратным ускорением */}
+        <div 
+          ref={tickerTrackRef}
+          className="flex items-center text-[10px] sm:text-[11px] font-bold tracking-[0.25em] text-zinc-300 uppercase font-mono pointer-events-none will-change-transform"
+        >
+          {/* Первая половина ленты (для замера ширины) */}
+          <div ref={tickerHalfRef} className="flex shrink-0 items-center gap-8 pr-8">
+            <span>{t("home_ticker")}</span>
             <span>{t("home_ticker")}</span>
             <span>{t("home_ticker")}</span>
           </div>
-          <div className="flex shrink-0 items-center gap-8">
+
+          {/* Вторая дублирующая половина для бесшовного зацикливания */}
+          <div className="flex shrink-0 items-center gap-8 pr-8">
+            <span>{t("home_ticker")}</span>
             <span>{t("home_ticker")}</span>
             <span>{t("home_ticker")}</span>
           </div>

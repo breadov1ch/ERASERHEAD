@@ -50,11 +50,6 @@ body::-webkit-scrollbar {
   will-change: transform;
 }
 
-.animate-marquee-smooth:hover,
-.animate-marquee-smooth-reverse:hover {
-  animation-play-state: paused;
-}
-
 /* --- СОВРЕМЕННЫЕ ПЛАВНЫЕ АНИМАЦИИ И МИКРОВЗАИМОДЕЙСТВИЯ --- */
 html {
   scroll-behavior: smooth;
