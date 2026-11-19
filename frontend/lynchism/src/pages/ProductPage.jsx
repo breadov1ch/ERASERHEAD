@@ -320,17 +320,17 @@ export default function ProductPage({ updateCart }) {
   }
 
   return (
-    <div className="bg-[#131313] text-zinc-100 min-h-screen py-6 sm:py-10 md:py-12 px-4 sm:px-8 md:px-12 lg:px-16 xl:px-24 font-mono overflow-x-hidden max-w-full animate-fade-in">
+    <div className="bg-[#131313] text-zinc-100 min-h-screen py-6 sm:py-10 px-4 sm:px-6 md:px-10 lg:px-14 xl:px-20 font-mono overflow-x-hidden max-w-full animate-fade-in">
       {/* Центрированный аккуратный контейнер с отступами по бокам, не на весь экран */}
-      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[380px_1fr] xl:grid-cols-[400px_1fr] gap-8 lg:gap-12 items-start w-full min-w-0">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[460px_1fr] xl:grid-cols-[500px_1fr] gap-8 lg:gap-12 items-start w-full min-w-0">
 
-        {/* ЛЕВАЯ КОЛОНКА: ГАЛЕРЕЯ (КОМПАКТНАЯ, С ОТДАЛЕНИЕМ И ОТСТУПАМИ) */}
-        <div className="space-y-3 sm:space-y-4 w-full max-w-[380px] mx-auto min-w-0">
+        {/* ЛЕВАЯ КОЛОНКА: ГАЛЕРЕЯ (НОРМАЛЬНЫЙ СТАНДАРТНЫЙ РАЗМЕР 3:4 С АККУРАТНЫМИ ОТСТУПАМИ) */}
+        <div className="space-y-3 sm:space-y-4 w-full max-w-[500px] mx-auto min-w-0">
 
-          {/* Главное фото с правильным отдалением (p-6 sm:p-8) */}
+          {/* Главное фото товара естественного размера (aspect-[3/4], max-h-[580px]) */}
           <div
             onClick={() => setLightboxOpen(true)}
-            className="w-full aspect-square max-h-[380px] bg-[#111111] border border-zinc-700 rounded-none flex items-center justify-center relative overflow-hidden group cursor-zoom-in shadow-xl"
+            className="w-full aspect-[3/4] max-h-[580px] bg-[#111111] border border-zinc-700 rounded-none flex items-center justify-center relative overflow-hidden group cursor-zoom-in shadow-xl"
           >
             <img
               src={imagesList[activeImageIndex] || safeImg(product?.imageURL)}
@@ -339,7 +339,7 @@ export default function ProductPage({ updateCart }) {
                 e.target.onerror = null;
                 e.target.src = PLACEHOLDER_SVG;
               }}
-              className="w-full h-full object-contain p-6 sm:p-8 transition-transform duration-300 group-hover:scale-105"
+              className="w-full h-full object-contain p-2 sm:p-3 transition-transform duration-300 group-hover:scale-105"
             />
 
             {/* Стрелки переключения фото */}
@@ -377,7 +377,7 @@ export default function ProductPage({ updateCart }) {
                   key={idx}
                   type="button"
                   onClick={() => setActiveImageIndex(idx)}
-                  className={`w-14 h-16 sm:w-16 sm:h-20 shrink-0 bg-[#111111] rounded-none overflow-hidden p-0 border transition-all cursor-pointer ${idx === activeImageIndex
+                  className={`w-14 h-18 sm:w-16 sm:h-20 shrink-0 bg-[#111111] rounded-none overflow-hidden p-0 border transition-all cursor-pointer ${idx === activeImageIndex
                     ? 'border-white shadow-md'
                     : 'border-zinc-700 opacity-60 hover:opacity-100 hover:border-zinc-400'
                     }`}
