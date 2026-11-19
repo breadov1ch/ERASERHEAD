@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { refreshTokens } from '../api';
 import { addToGuestCart } from '../cartManager';
@@ -136,7 +136,7 @@ export default function ProductPage({ updateCart }) {
     : (product?.imageURL ? [product.imageURL] : []);
   const imagesList = rawImages.map(safeImg);
 
-  const availableColors = (() => {
+    const availableColors = (() => {
     if (!product?.colorsJson) return [];
     try {
       const parsed = JSON.parse(product.colorsJson);
@@ -148,13 +148,101 @@ export default function ProductPage({ updateCart }) {
 
   const handlePrevImage = (e) => {
     e?.stopPropagation();
+    playClickSound();
     setActiveImageIndex(prev => prev === 0 ? imagesList.length - 1 : prev - 1);
   };
 
   const handleNextImage = (e) => {
     e?.stopPropagation();
+    playClickSound();
     setActiveImageIndex(prev => prev === imagesList.length - 1 ? 0 : prev + 1);
   };
+
+  // СВАЙП ФОТОГРАФИЙ (ТАЧ НА СМАРТФОНЕ И ПЕРЕТАСКИВАНИЕ МЫШЬЮ)
+  const touchStartXRef = useRef(0);
+  const touchStartYRef = useRef(0);
+  const touchEndXRef = useRef(0);
+  const touchEndYRef = useRef(0);
+  const isSwipingRef = useRef(false);
+  const isMouseDownRef = useRef(false);
+
+  const handleTouchStart = (e) => {
+    if (!e.touches || e.touches.length === 0) return;
+    touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
+    touchEndXRef.current = e.touches[0].clientX;
+    touchEndYRef.current = e.touches[0].clientY;
+    isSwipingRef.current = false;
+  };
+
+  const handleTouchMove = (e) => {
+    if (!e.touches || e.touches.length === 0) return;
+    touchEndXRef.current = e.touches[0].clientX;
+    touchEndYRef.current = e.touches[0].clientY;
+    const diffX = Math.abs(touchEndXRef.current - touchStartXRef.current);
+    const diffY = Math.abs(touchEndYRef.current - touchStartYRef.current);
+    if (diffX > 10 && diffX > diffY) {
+      isSwipingRef.current = true;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    const diffX = touchEndXRef.current - touchStartXRef.current;
+    const diffY = Math.abs(touchEndYRef.current - touchStartYRef.current);
+    const minSwipeDistance = 35; // пикселей для срабатывания свайпа
+
+    if (Math.abs(diffX) > minSwipeDistance && Math.abs(diffX) > diffY) {
+      if (diffX < 0) {
+        handleNextImage(); // Свайп пальцем влево -> следующее фото
+      } else {
+        handlePrevImage(); // Свайп пальцем вправо -> предыдущее фото
+      }
+      setTimeout(() => {
+        isSwipingRef.current = false;
+      }, 100);
+    } else {
+      setTimeout(() => {
+        isSwipingRef.current = false;
+      }, 50);
+    }
+  };
+
+  const handleMouseDown = (e) => {
+    if (e.button !== 0) return;
+    touchStartXRef.current = e.clientX;
+    touchStartYRef.current = e.clientY;
+    touchEndXRef.current = e.clientX;
+    touchEndYRef.current = e.clientY;
+    isMouseDownRef.current = true;
+    isSwipingRef.current = false;
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isMouseDownRef.current) return;
+    touchEndXRef.current = e.clientX;
+    touchEndYRef.current = e.clientY;
+    const diffX = Math.abs(touchEndXRef.current - touchStartXRef.current);
+    if (diffX > 12) {
+      isSwipingRef.current = true;
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (!isMouseDownRef.current) return;
+    isMouseDownRef.current = false;
+    handleTouchEnd();
+  };
+
+  // Переключение фото стрелками клавиатуры и закрытие по Esc
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowLeft') handlePrevImage();
+      if (e.key === 'ArrowRight') handleNextImage();
+      if (e.key === 'Escape' && lightboxOpen) setLightboxOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxOpen, imagesList.length]);
 
   const handleToggleWishlist = () => {
     playClickSound();
@@ -327,19 +415,34 @@ export default function ProductPage({ updateCart }) {
         {/* ЛЕВАЯ КОЛОНКА: ГАЛЕРЕЯ (НОРМАЛЬНЫЙ СТАНДАРТНЫЙ РАЗМЕР 3:4 С АККУРАТНЫМИ ОТСТУПАМИ) */}
         <div className="space-y-3 sm:space-y-4 w-full max-w-[500px] mx-auto min-w-0">
 
-          {/* Главное фото товара естественного размера (aspect-[3/4], max-h-[580px]) */}
+          {/* Главное фото товара естественного размера (aspect-[3/4], max-h-[580px]) с поддержкой свайпа */}
           <div
-            onClick={() => setLightboxOpen(true)}
-            className="w-full aspect-[3/4] max-h-[580px] bg-[#111111] border border-zinc-700 rounded-none flex items-center justify-center relative overflow-hidden group cursor-zoom-in shadow-xl"
+            onClick={(e) => {
+              if (isSwipingRef.current) {
+                e.stopPropagation();
+                return;
+              }
+              setLightboxOpen(true);
+            }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            style={{ touchAction: 'pan-y' }}
+            className="w-full aspect-[3/4] max-h-[580px] bg-[#111111] border border-zinc-700 rounded-none flex items-center justify-center relative overflow-hidden group cursor-zoom-in shadow-xl select-none"
           >
             <img
+              key={activeImageIndex}
               src={imagesList[activeImageIndex] || safeImg(product?.imageURL)}
               alt={product?.name}
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = PLACEHOLDER_SVG;
               }}
-              className="w-full h-full object-contain p-2 sm:p-3 transition-transform duration-300 group-hover:scale-105"
+              className="w-full h-full object-contain p-2 sm:p-3 transition-transform duration-300 group-hover:scale-105 pointer-events-none select-none animate-fade-in"
+              draggable="false"
             />
 
             {/* Стрелки переключения фото */}
@@ -664,17 +767,29 @@ export default function ProductPage({ updateCart }) {
 
       </div>
 
-      {/* ПОЛНОЭКРАННЫЙ ПРОСМОТР ФОТО (LIGHTBOX) */}
+      {/* ПОЛНОЭКРАННЫЙ ПРОСМОТР ФОТО (LIGHTBOX) С ПОДДЕРЖКОЙ СВАЙПА */}
       {lightboxOpen && (
         <div
           onClick={() => setLightboxOpen(false)}
-          className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 cursor-zoom-out animate-fade-in"
+          className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 cursor-zoom-out animate-fade-in select-none"
         >
-          <div className="relative max-w-4xl max-h-[90vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="relative max-w-4xl max-h-[90vh] flex items-center justify-center select-none"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            style={{ touchAction: 'pan-y' }}
+          >
             <img
+              key={`lightbox-${activeImageIndex}`}
               src={imagesList[activeImageIndex] || product?.imageURL}
               alt="High-Res Inspection"
-              className="max-w-full max-h-[85vh] object-contain rounded-none border border-zinc-800 shadow-2xl"
+              className="max-w-full max-h-[85vh] object-contain rounded-none border border-zinc-800 shadow-2xl pointer-events-none select-none animate-fade-in"
+              draggable="false"
             />
 
             {imagesList.length > 1 && (
