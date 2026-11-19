@@ -274,9 +274,9 @@ export default function Catalog() {
 
         {/* ЛИПКАЯ ПАНЕЛЬ ТОЛЬКО КАТЕГОРИЙ ВВЕРХУ (ОСТАЕТСЯ СТАТИЧНОЙ ПРИ СКРОЛЛЕ) */}
         <div className="sticky top-[47px] sm:top-[51px] z-30 bg-[#131313]/95 backdrop-blur-md border-b border-zinc-800 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 shadow-xl transition-all">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-            {/* Линейка категорий: на мобилке горизонтальный скролл, на планшетах и ПК аккуратный перенос (flex-wrap), чтобы не вылезало за грань */}
-            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto sm:overflow-visible sm:flex-wrap no-scrollbar py-0.5 flex-1">
+          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2.5">
+            {/* Линейка категорий: на мобилке горизонтальный скролл, на планшетах и ПК аккуратный перенос (flex-wrap), чтобы ни один элемент не вылезал за грань */}
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto sm:overflow-visible flex-nowrap sm:flex-wrap no-scrollbar py-0.5 flex-1 min-w-0">
               {categoryTabs.map((tab) => {
                 const isTabActive = category.toLowerCase() === tab.key.toLowerCase();
                 const count = categoryCounts[tab.key] ?? 0;
@@ -285,7 +285,7 @@ export default function Catalog() {
                     key={tab.key}
                     type="button"
                     onClick={() => handleCategoryChange(tab.key)}
-                    className={`shrink-0 px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10.5px] sm:text-[11px] font-bold uppercase tracking-wider font-mono border transition-all cursor-pointer btn-press flex items-center gap-1.5 ${
+                    className={`shrink-0 px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider font-mono border transition-all cursor-pointer btn-press flex items-center gap-1.5 whitespace-nowrap ${
                       isTabActive
                         ? 'bg-white text-black border-white shadow-md font-black'
                         : 'bg-[#181818] text-zinc-300 border-zinc-800 hover:border-zinc-500 hover:text-white'
@@ -961,22 +961,24 @@ export default function Catalog() {
                     </div>
                   </div>
 
-                  {/* Название и цена */}
-                  <div className="mt-2.5 sm:mt-3 space-y-0.5 sm:space-y-1">
-                    <h2 className="font-bold text-xs sm:text-base text-white tracking-tight line-clamp-1 group-hover:text-zinc-200">
-                      {product.name}
-                    </h2>
-                    <div className="flex justify-between items-center gap-1">
-                      <span className="text-xs sm:text-base font-bold text-zinc-100 font-mono">
+                  {/* Название, цена и категория (Четкий расчет: цена никогда не рвется на 2 строки, название помещается целиком) */}
+                  <div className="mt-2.5 sm:mt-3 space-y-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h2 className="font-bold text-xs sm:text-sm text-white tracking-tight line-clamp-2 group-hover:text-zinc-200 flex-1 leading-snug">
+                        {product.name}
+                      </h2>
+                      <span className="text-xs sm:text-sm font-bold text-white font-mono shrink-0 whitespace-nowrap pl-1">
                         {formatPrice(product.price)}
                       </span>
-                      <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-zinc-400 font-medium truncate">
-                        <span className="text-zinc-300 font-bold uppercase">
-                          {product.gender === 'Men' ? (t("gender_men") || loc('Чоловіче', 'Men', 'Мужское')) : product.gender === 'Women' ? (t("gender_women") || loc('Жіноче', 'Women', 'Женское')) : (t("gender_unisex") || loc('Унісекс', 'Unisex', 'Унисекс'))}
-                        </span>
-                        <span className="text-zinc-600">•</span>
-                        <span>{categoryTabs.find(c => c.key.toLowerCase() === (product.category || '').toLowerCase())?.label || product.category}</span>
-                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-mono truncate min-w-0 pt-0.5 border-t border-zinc-800/40">
+                      <span className="text-zinc-300 font-bold uppercase shrink-0">
+                        {product.gender === 'Men' ? (t("gender_men") || loc('Чол.', 'Men', 'Муж.')) : product.gender === 'Women' ? (t("gender_women") || loc('Жін.', 'Women', 'Жен.')) : (t("gender_unisex") || loc('Унісекс', 'Unisex', 'Унисекс'))}
+                      </span>
+                      <span className="text-zinc-600 shrink-0">•</span>
+                      <span className="truncate text-zinc-400">
+                        {categoryTabs.find(c => c.key.toLowerCase() === (product.category || '').toLowerCase())?.label || product.category}
+                      </span>
                     </div>
                   </div>
 

@@ -36,7 +36,7 @@ export const CurrencyProvider = ({ children }) => {
     const converted = convertPrice(usdAmount);
     if (currency === 'UAH') {
       const rounded = Math.round(converted);
-      return `${rounded.toLocaleString('uk-UA')} ₴`;
+      return `${rounded.toLocaleString('uk-UA')}\u00A0₴`;
     }
     if (currency === 'EUR') {
       return `€${converted.toFixed(2)}`;
