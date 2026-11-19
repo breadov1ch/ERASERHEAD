@@ -803,7 +803,6 @@ export default function DeliverySelector({
                   </div>
                 )}
               </div>
-            )}
           </div>
         )}
 
