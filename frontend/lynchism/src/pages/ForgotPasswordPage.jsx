@@ -179,6 +179,9 @@ export default function ForgotPasswordPage() {
                 disabled={loading}
                 hasError={Boolean(error)}
               />
+              <p className="text-[10px] text-zinc-500 text-center tracking-wider uppercase mt-1">
+                {loc('ⓘ Якщо лист не з\'явився у Вхідних, перевірте папку «Спам»', 'ⓘ If not in Inbox, check your "Spam" folder', 'ⓘ Если не появилось во Входящих, проверьте папку «Спам»')}
+              </p>
             </div>
 
             <div className="flex flex-col gap-2">

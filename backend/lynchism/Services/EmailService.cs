@@ -118,72 +118,77 @@ namespace lynchism.Services
                 }
             }
 
-            // 3. ПРИОРИТЕТ: Стандартный SMTP (Gmail, etc.) со строгим таймаутом (5 сек), чтобы не подвешивать сервер при блокировке провайдером
+            // 3. ПРИОРИТЕТ: Стандартный SMTP (Gmail, etc.) с повтором и таймаутом
             string smtpHost = _config["Smtp:Host"] ?? Environment.GetEnvironmentVariable("SMTP_HOST") ?? "";
             string smtpPortStr = _config["Smtp:Port"] ?? Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587";
             string smtpUser = _config["Smtp:User"] ?? Environment.GetEnvironmentVariable("SMTP_USER") ?? "";
             string smtpPass = (_config["Smtp:Password"] ?? Environment.GetEnvironmentVariable("SMTP_PASSWORD") ?? "").Replace(" ", "").Trim();
             string fromEmail = _config["Smtp:From"] ?? Environment.GetEnvironmentVariable("SMTP_FROM") ?? smtpUser;
-            if (string.IsNullOrWhiteSpace(fromEmail)) fromEmail = "noreply@eraserhead.store";
-
-            if (string.IsNullOrWhiteSpace(smtpHost) || string.IsNullOrWhiteSpace(smtpUser))
-            {
-                Console.WriteLine($"[SMTP NOTICE]: SMTP не настроен в appsettings.json. Письмо выведено в консоль.");
-            }
-            else
-            {
-                Console.WriteLine($"[SMTP RELAY]: Отправка через {smtpHost}:{smtpPortStr} от {fromEmail}...");
-            }
-            Console.WriteLine($"==================================================\n");
+            if (string.IsNullOrWhiteSpace(fromEmail)) fromEmail = "eraserhead.store@gmail.com";
 
             if (!string.IsNullOrWhiteSpace(smtpHost) && !string.IsNullOrWhiteSpace(smtpUser) && !string.IsNullOrWhiteSpace(smtpPass))
             {
-                try
+                int.TryParse(smtpPortStr, out int port);
+                if (port <= 0) port = 587;
+
+                // До 2 попыток отправки на случай кратковременного сбоя сокета Gmail
+                for (int attempt = 1; attempt <= 2; attempt++)
                 {
-                    int.TryParse(smtpPortStr, out int port);
-                    if (port <= 0) port = 587;
-
-                    using var client = new SmtpClient(smtpHost, port)
+                    try
                     {
-                        UseDefaultCredentials = false,
-                        Credentials = new NetworkCredential(smtpUser.Trim(), smtpPass.Trim()),
-                        EnableSsl = true,
-                        DeliveryMethod = SmtpDeliveryMethod.Network
-                    };
+                        Console.WriteLine($"[SMTP RELAY (Попытка {attempt}/2)]: Отправка через {smtpHost}:{port} на {toEmail}...");
 
-                    var mailMessage = new MailMessage
-                    {
-                        From = new MailAddress(fromEmail, "ERASERHEAD ARCHIVE"),
-                        Subject = subject,
-                        Body = htmlBody,
-                        IsBodyHtml = true
-                    };
-                    mailMessage.To.Add(toEmail.Trim());
+                        using var client = new SmtpClient(smtpHost, port)
+                        {
+                            UseDefaultCredentials = false,
+                            Credentials = new NetworkCredential(smtpUser.Trim(), smtpPass.Trim()),
+                            EnableSsl = true,
+                            DeliveryMethod = SmtpDeliveryMethod.Network
+                        };
 
-                    // Жесткий таймаут 5 секунд, так как SendMailAsync игнорирует client.Timeout в .NET Core
-                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-                    var sendTask = client.SendMailAsync(mailMessage);
-                    var completedTask = await Task.WhenAny(sendTask, Task.Delay(5000, cts.Token));
+                        var mailMessage = new MailMessage
+                        {
+                            From = new MailAddress(fromEmail, "ERASERHEAD"),
+                            Subject = subject,
+                            Body = htmlBody,
+                            IsBodyHtml = true
+                        };
+                        mailMessage.To.Add(toEmail.Trim());
+                        mailMessage.ReplyToList.Add(new MailAddress("eraserhead.store@gmail.com", "ERASERHEAD Support"));
+                        mailMessage.Headers.Add("X-Priority", "1");
+                        mailMessage.Headers.Add("Importance", "High");
 
-                    if (completedTask != sendTask)
-                    {
-                        throw new TimeoutException($"SMTP connection timed out after 5 seconds. Cloud host (e.g., Render Free) has blocked outbound SMTP port {port}. Use RESEND_API_KEY for HTTP delivery.");
+                        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(7));
+                        var sendTask = client.SendMailAsync(mailMessage);
+                        var completedTask = await Task.WhenAny(sendTask, Task.Delay(7000, cts.Token));
+
+                        if (completedTask != sendTask)
+                        {
+                            throw new TimeoutException($"SMTP connection timed out after 7s on attempt {attempt}.");
+                        }
+
+                        await sendTask;
+                        Console.WriteLine($"[SMTP SUCCESS]: Письмо успешно отправлено для {toEmail}!");
+                        Console.WriteLine($"==================================================\n");
+                        return true;
                     }
-
-                    await sendTask;
-                    Console.WriteLine($"[SMTP SUCCESS]: Письмо успешно доставлено почтовому серверу для {toEmail}!");
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"[SMTP ERROR]: Не удалось отправить письмо через {smtpHost}:{smtpPortStr}: {ex.Message}");
-                    if (ex.InnerException != null)
+                    catch (Exception ex)
                     {
-                        Console.WriteLine($"[SMTP INNER ERROR]: {ex.InnerException.Message}");
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine($"[SMTP ATTEMPT {attempt} FAILED]: {ex.Message}");
+                        Console.ResetColor();
+
+                        if (attempt == 1)
+                        {
+                            await Task.Delay(1000);
+                            continue;
+                        }
+
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"[SMTP ERROR FINAL]: Не удалось отправить письмо через {smtpHost}:{port} после 2 попыток: {ex.Message}");
+                        Console.ResetColor();
+                        return false;
                     }
-                    Console.ResetColor();
-                    return false;
                 }
             }
 
@@ -219,7 +224,7 @@ namespace lynchism.Services
 
         public async Task<bool> SendPasswordResetEmailAsync(string toEmail, string resetCode)
         {
-            string subject = "ERASERHEAD // PASSWORD_RECOVERY_CODE";
+            string subject = $"Код відновлення пароля: {resetCode} — ERASERHEAD";
             string body = $@"
                 <div style=""background-color: #070707; color: #fff; font-family: 'Courier New', Courier, monospace; padding: 40px; border: 1px solid #222; max-width: 600px; margin: 0 auto;"">
                     <div style=""border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 25px;"">
@@ -294,7 +299,7 @@ namespace lynchism.Services
 
         public async Task<bool> SendRegistrationCodeEmailAsync(string toEmail, string code, string name)
         {
-            string subject = "ERASERHEAD // VERIFICATION_CODE";
+            string subject = $"Код підтвердження: {code} — ERASERHEAD";
             string displayName = string.IsNullOrWhiteSpace(name) ? toEmail.Split('@')[0] : name;
             string body = $@"
                 <div style=""background-color: #070707; color: #fff; font-family: 'Courier New', Courier, monospace; padding: 40px; border: 1px solid #222; max-width: 600px; margin: 0 auto;"">

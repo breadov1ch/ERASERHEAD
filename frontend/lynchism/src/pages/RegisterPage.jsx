@@ -381,6 +381,10 @@ export default function RegisterPage() {
               />
             </div>
 
+            <p className="text-[10px] text-zinc-500 text-center tracking-wider uppercase -mt-2 mb-4">
+              {loc('ⓘ Якщо лист не з\'явився у Вхідних, перевірте папку «Спам»', 'ⓘ If not in Inbox, check your "Spam" folder', 'ⓘ Если не появилось во Входящих, проверьте папку «Спам»')}
+            </p>
+
             <button
               type="button"
               disabled={code.length < 6 || loading}
