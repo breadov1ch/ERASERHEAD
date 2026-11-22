@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { refreshTokens } from '../api';
 import { addToGuestCart } from '../cartManager';
@@ -476,7 +477,7 @@ export default function ProductPage({ updateCart }) {
   }
 
   return (
-    <div className="bg-[#131313] text-zinc-100 min-h-screen py-6 sm:py-10 px-4 sm:px-6 md:px-10 lg:px-14 xl:px-20 font-mono overflow-x-hidden max-w-full animate-fade-in">
+    <div className="bg-[#131313] text-zinc-100 min-h-screen py-6 sm:py-10 px-4 sm:px-6 md:px-10 lg:px-14 xl:px-20 font-mono overflow-x-hidden max-w-full">
       {/* Центрированный аккуратный контейнер с отступами по бокам, не на весь экран */}
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[460px_1fr] xl:grid-cols-[500px_1fr] gap-8 lg:gap-12 items-start w-full min-w-0">
 
@@ -512,6 +513,9 @@ export default function ProductPage({ updateCart }) {
                       e.stopPropagation();
                       return;
                     }
+                    setLightboxDragX(0);
+                    setLightboxDragY(0);
+                    setIsLightboxDragging(false);
                     setLightboxOpen(true);
                   }}
                   className="w-full h-full shrink-0 flex items-center justify-center p-2 sm:p-3 relative cursor-zoom-in select-none"
@@ -869,7 +873,7 @@ export default function ProductPage({ updateCart }) {
       </div>
 
       {/* ПОЛНОЭКРАННЫЙ ПРОСМОТР ФОТО (LIGHTBOX) С ЖИВЫМ СВАЙПОМ И ЗАКРЫТИЕМ ВНИЗ */}
-      {lightboxOpen && (
+      {lightboxOpen && createPortal(
         <div
           onClick={() => setLightboxOpen(false)}
           className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-3 select-none"
@@ -943,7 +947,8 @@ export default function ProductPage({ updateCart }) {
               ← Свайп для зміни • Вниз для закриття ↓
             </span>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ТАБЛИЦА РАЗМЕРОВ (SIZE GUIDE) */}
@@ -982,7 +987,7 @@ export default function ProductPage({ updateCart }) {
 
         const headers = getHeaders();
 
-        return (
+        return createPortal(
           <div
             onClick={() => setShowSizeGuide(false)}
             className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[999] p-4 animate-fade-in font-mono"
@@ -1095,12 +1100,13 @@ export default function ProductPage({ updateCart }) {
                 {t("product_size_chart_note")}
               </p>
             </div>
-          </div>
+          </div>,
+          document.body
         );
       })()}
 
       {/* МОДАЛКА "ПОДЕЛИТЬСЯ ТОВАРОМ" */}
-      {showShareModal && (
+      {showShareModal && createPortal(
         <div
           onClick={() => setShowShareModal(false)}
           className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in font-mono"
@@ -1244,7 +1250,8 @@ export default function ProductPage({ updateCart }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>
