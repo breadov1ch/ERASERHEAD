@@ -244,10 +244,13 @@ export default function ProductPage({ updateCart }) {
   // Блокировка скролла страницы при открытом зуме (чтобы фото не улетало вниз)
   useEffect(() => {
     if (lightboxOpen) {
-      const origOverflow = document.body.style.overflow;
+      const origBodyOverflow = document.body.style.overflow;
+      const origHtmlOverflow = document.documentElement.style.overflow;
       document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
       return () => {
-        document.body.style.overflow = origOverflow;
+        document.body.style.overflow = origBodyOverflow;
+        document.documentElement.style.overflow = origHtmlOverflow;
       };
     }
   }, [lightboxOpen]);
@@ -876,21 +879,40 @@ export default function ProductPage({ updateCart }) {
       {lightboxOpen && createPortal(
         <div
           onClick={() => setLightboxOpen(false)}
-          className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-3 select-none"
-          style={{ touchAction: 'none' }}
+          className="fixed inset-0 bg-black/95 backdrop-blur-md select-none"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100dvh',
+            zIndex: 999999,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            touchAction: 'none',
+            padding: '12px'
+          }}
         >
           {/* Фиксированная кнопка закрытия */}
           <button
             type="button"
             onClick={() => setLightboxOpen(false)}
-            className="fixed top-4 right-4 z-50 bg-black/90 border border-zinc-700 text-white px-3.5 py-2 text-xs font-mono uppercase tracking-widest hover:border-white transition-colors cursor-pointer shadow-xl flex items-center gap-1.5 btn-press"
+            style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 1000000 }}
+            className="bg-black/90 border border-zinc-700 text-white px-3.5 py-2 text-xs font-mono uppercase tracking-widest hover:border-white transition-colors cursor-pointer shadow-xl flex items-center gap-1.5 btn-press"
           >
             <span>✕</span>
             <span>{t("product_close")}</span>
           </button>
 
           {/* Индикатор текущего кадра */}
-          <div className="fixed top-4 left-4 z-50 pointer-events-none">
+          <div
+            style={{ position: 'fixed', top: '16px', left: '16px', zIndex: 1000000, pointerEvents: 'none' }}
+          >
             <span className="bg-black/90 px-3 py-1.5 border border-zinc-800 text-[11px] text-zinc-300 font-mono uppercase tracking-wider">
               {activeImageIndex + 1} / {imagesList.length || 1}
             </span>
@@ -898,7 +920,7 @@ export default function ProductPage({ updateCart }) {
 
           {/* Контейнер изображения: строго центрирован, не улетает вниз */}
           <div
-            className="relative flex items-center justify-center max-w-4xl max-h-[82vh] w-full"
+            className="relative flex items-center justify-center max-w-4xl max-h-[82dvh] w-full"
             onClick={(e) => e.stopPropagation()}
             onTouchStart={onLightboxTouchStart}
             onTouchMove={onLightboxTouchMove}
@@ -914,7 +936,7 @@ export default function ProductPage({ updateCart }) {
               key={`lightbox-${activeImageIndex}`}
               src={imagesList[activeImageIndex] || safeImg(product?.imageURL)}
               alt="High-Res Inspection"
-              className="max-w-[92vw] max-h-[80vh] object-contain rounded-none border border-zinc-800 shadow-2xl pointer-events-none select-none animate-fade-in"
+              className="max-w-[92vw] max-h-[80dvh] object-contain rounded-none border border-zinc-800 shadow-2xl pointer-events-none select-none"
               draggable="false"
             />
           </div>
@@ -925,7 +947,8 @@ export default function ProductPage({ updateCart }) {
               <button
                 type="button"
                 onClick={handlePrevImage}
-                className="hidden sm:flex fixed left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/90 border border-zinc-700 text-white items-center justify-center text-lg hover:border-white transition-colors cursor-pointer z-50 btn-press"
+                style={{ position: 'fixed', left: '16px', top: '50%', transform: 'translateY(-50%)', zIndex: 1000000 }}
+                className="hidden sm:flex w-10 h-10 bg-black/90 border border-zinc-700 text-white items-center justify-center text-lg hover:border-white transition-colors cursor-pointer shadow-xl btn-press"
                 aria-label="Previous image"
               >
                 ‹
@@ -933,7 +956,8 @@ export default function ProductPage({ updateCart }) {
               <button
                 type="button"
                 onClick={handleNextImage}
-                className="hidden sm:flex fixed right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/90 border border-zinc-700 text-white items-center justify-center text-lg hover:border-white transition-colors cursor-pointer z-50 btn-press"
+                style={{ position: 'fixed', right: '16px', top: '50%', transform: 'translateY(-50%)', zIndex: 1000000 }}
+                className="hidden sm:flex w-10 h-10 bg-black/90 border border-zinc-700 text-white items-center justify-center text-lg hover:border-white transition-colors cursor-pointer shadow-xl btn-press"
                 aria-label="Next image"
               >
                 ›
@@ -942,7 +966,10 @@ export default function ProductPage({ updateCart }) {
           )}
 
           {/* Подсказка для мобильных телефонов */}
-          <div className="fixed bottom-4 left-0 right-0 flex justify-center pointer-events-none z-50 sm:hidden">
+          <div
+            style={{ position: 'fixed', bottom: '16px', left: 0, right: 0, zIndex: 1000000, pointerEvents: 'none' }}
+            className="flex justify-center sm:hidden"
+          >
             <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest bg-black/80 px-2.5 py-1 border border-zinc-800">
               ← Свайп для зміни • Вниз для закриття ↓
             </span>
