@@ -62,10 +62,9 @@ export const startWayForPayPayment = async ({
               console.error("Failed to mark order paid:", err);
             }
             if (onApproved) {
-              onApproved(response);
-            } else {
-              window.location.href = `/confirmation/${orderId}?paid=1&status=Approved`;
+              try { onApproved(response); } catch (e) {}
             }
+            window.location.href = `/confirmation/${orderId}?paid=1&status=Approved`;
           },
           function (response) {
             console.log("WayForPay declined callback:", response);
@@ -79,12 +78,11 @@ export const startWayForPayPayment = async ({
               console.error("Failed to mark order paid:", err);
             }
             if (onApproved) {
-              onApproved(response);
+              try { onApproved(response); } catch (e) {}
             } else if (onPending) {
-              onPending(response);
-            } else {
-              window.location.href = `/confirmation/${orderId}?paid=1&status=Approved`;
+              try { onPending(response); } catch (e) {}
             }
+            window.location.href = `/confirmation/${orderId}?paid=1&status=Approved`;
           }
         );
         return;

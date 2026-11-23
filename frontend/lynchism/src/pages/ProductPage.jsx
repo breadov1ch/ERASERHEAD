@@ -164,7 +164,6 @@ export default function ProductPage({ updateCart }) {
     dragStartYRef.current = e.touches[0].clientY;
     isHorizontalSwipeRef.current = false;
     hasMovedRef.current = false;
-    setIsDragging(true);
   };
 
   const onTouchMoveGallery = (e) => {
@@ -175,18 +174,19 @@ export default function ProductPage({ updateCart }) {
     const diffY = currentY - dragStartYRef.current;
 
     // Определяем горизонтальный свайп, чтобы не мешать вертикальному скроллу
-    if (!isHorizontalSwipeRef.current && (Math.abs(diffX) > 7 || Math.abs(diffY) > 7)) {
+    if (!isHorizontalSwipeRef.current && (Math.abs(diffX) > 8 || Math.abs(diffY) > 8)) {
       if (Math.abs(diffX) > Math.abs(diffY)) {
         isHorizontalSwipeRef.current = true;
+        setIsDragging(true);
       }
     }
 
     if (isHorizontalSwipeRef.current) {
       hasMovedRef.current = true;
-      // Мягкое натяжение на краях списка
+      // Мягкое натяжение на краях списка (сопротивление резинки, без безумной перемотки)
       let offset = diffX;
       if ((activeImageIndex === 0 && diffX > 0) || (activeImageIndex === imagesList.length - 1 && diffX < 0)) {
-        offset = diffX * 0.35;
+        offset = diffX * 0.2;
       }
       setDragOffset(offset);
     }
@@ -194,17 +194,21 @@ export default function ProductPage({ updateCart }) {
 
   const onTouchEndGallery = () => {
     setIsDragging(false);
-    const threshold = 45; // порог срабатывания свайпа (пиксели)
+    const threshold = 35; // комфортный порог срабатывания свайпа
 
     if (hasMovedRef.current && Math.abs(dragOffset) > threshold) {
       if (dragOffset < -threshold) {
-        // Свайп влево -> следующее фото
-        playClickSound();
-        setActiveImageIndex(prev => (prev < imagesList.length - 1 ? prev + 1 : 0));
+        // Свайп влево -> следующее фото (без перемотки на начало)
+        if (activeImageIndex < imagesList.length - 1) {
+          playClickSound();
+          setActiveImageIndex(prev => prev + 1);
+        }
       } else if (dragOffset > threshold) {
-        // Свайп вправо -> предыдущее фото
-        playClickSound();
-        setActiveImageIndex(prev => (prev > 0 ? prev - 1 : imagesList.length - 1));
+        // Свайп вправо -> предыдущее фото (без перемотки на конец)
+        if (activeImageIndex > 0) {
+          playClickSound();
+          setActiveImageIndex(prev => prev - 1);
+        }
       }
     }
     setDragOffset(0);
@@ -226,12 +230,12 @@ export default function ProductPage({ updateCart }) {
   const onMouseMoveGallery = (e) => {
     if (!isDragging) return;
     const diffX = e.clientX - dragStartXRef.current;
-    if (Math.abs(diffX) > 6) {
+    if (Math.abs(diffX) > 5) {
       hasMovedRef.current = true;
     }
     let offset = diffX;
     if ((activeImageIndex === 0 && diffX > 0) || (activeImageIndex === imagesList.length - 1 && diffX < 0)) {
-      offset = diffX * 0.35;
+      offset = diffX * 0.2;
     }
     setDragOffset(offset);
   };

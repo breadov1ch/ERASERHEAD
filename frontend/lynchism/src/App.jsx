@@ -120,7 +120,6 @@ function AppContent() {
         {/* Страницы подтверждения заказа */}
         <Route path='/confirmation/:id' element={<ConfirmationPage />} />
         <Route path='/confirmation_page/:id' element={<ConfirmationPage />} />
-        <Route path='/сonfirmation_page/:id' element={<ConfirmationPage />} />
         
         <Route path='/profile' element={<ProfilePage updateCart={refreshCartCount} />} />
         

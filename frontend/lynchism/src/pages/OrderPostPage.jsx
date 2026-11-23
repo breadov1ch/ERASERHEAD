@@ -25,6 +25,22 @@ export default function OrderPostPage({ removeItem }) {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
+  // Сброс блокировки при закрытии виджета оплаты WayForPay
+  useEffect(() => {
+    const handleWfpMessage = (event) => {
+      const data = event.data;
+      if (
+        data === "WfpWidgetClose" ||
+        data === "close" ||
+        (typeof data === "object" && (data?.type === "WfpWidgetClose" || data?.reason === "WfpWidgetEventClose"))
+      ) {
+        setSubmitting(false);
+      }
+    };
+    window.addEventListener("message", handleWfpMessage);
+    return () => window.removeEventListener("message", handleWfpMessage);
+  }, []);
+
   // Доставка перевозчиком (Нова Пошта / Укрпошта / Meest)
   const [deliveryInfo, setDeliveryInfo] = useState({
     carrier: 'Нова Пошта',
@@ -272,25 +288,9 @@ export default function OrderPostPage({ removeItem }) {
             }
           } catch (e) { }
 
+          // Прямой переход в браузере, гарантирующий очистку всех скриптов/виджетов и отображение страницы подтверждения
           const targetUrl = `/confirmation/${createdOrderId}?paid=1&status=Approved`;
-          try {
-            navigate(targetUrl, {
-              state: {
-                clientCreated: data?.clientCreated,
-                email: data?.email,
-                paid: true,
-                isPrepaid: paymentMethod !== "WayForPay",
-                paymentMethod: paymentMethod
-              }
-            });
-          } catch (navErr) {
-            window.location.href = targetUrl;
-          }
-          setTimeout(() => {
-            if (!window.location.pathname.includes(`/confirmation/${createdOrderId}`)) {
-              window.location.href = targetUrl;
-            }
-          }, 350);
+          window.location.href = targetUrl;
         },
         onDeclined: async () => {
           try {
@@ -321,25 +321,7 @@ export default function OrderPostPage({ removeItem }) {
           } catch (e) { }
 
           const targetUrl = `/confirmation/${createdOrderId}?paid=1&status=Approved`;
-          try {
-            navigate(targetUrl, {
-              state: {
-                clientCreated: data?.clientCreated,
-                email: data?.email,
-                paid: true,
-                pending: true,
-                paymentMethod: paymentMethod,
-                isPrepaid: paymentMethod !== "WayForPay"
-              }
-            });
-          } catch (navErr) {
-            window.location.href = targetUrl;
-          }
-          setTimeout(() => {
-            if (!window.location.pathname.includes(`/confirmation/${createdOrderId}`)) {
-              window.location.href = targetUrl;
-            }
-          }, 350);
+          window.location.href = targetUrl;
         },
         onError: async () => {
           try {
