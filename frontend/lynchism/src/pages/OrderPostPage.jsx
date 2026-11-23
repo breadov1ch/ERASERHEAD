@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { refreshTokens } from '../api';
 import { getGuestCart, clearGuestCart, mergeGuestCartWithServer } from '../cartManager';
 import { API_URL } from '../config';
@@ -8,12 +7,36 @@ import { useCurrency } from '../currency';
 import { startWayForPayPayment } from '../wayforpay';
 import DeliverySelector from '../components/DeliverySelector';
 
+const getUserEmailFromToken = () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    if (!token) return "";
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return "";
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const decoded = JSON.parse(jsonPayload);
+    return (
+      decoded?.email ||
+      decoded?.emailaddress ||
+      decoded?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] ||
+      ""
+    );
+  } catch (e) {
+    return "";
+  }
+};
+
 export default function OrderPostPage({ removeItem }) {
-  const navigate = useNavigate();
   const { t, loc } = useTranslation();
   const { formatPrice } = useCurrency();
   const [cartItems, setCartItems] = useState([]);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(getUserEmailFromToken);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [country, setCountry] = useState("Ukraine");
   const [zip, setZip] = useState("49000");
@@ -169,6 +192,69 @@ export default function OrderPostPage({ removeItem }) {
     };
 
     loadCart();
+  }, []);
+
+  // Автоматическая подстановка email и имени пользователя, если он вошел в аккаунт
+  useEffect(() => {
+    const loadUserData = async () => {
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
+
+      const fastEmail = getUserEmailFromToken();
+      if (fastEmail) {
+        setEmail(prev => prev || fastEmail);
+      }
+
+      try {
+        let response = await fetch(`${API_URL}/Client/me`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          }
+        });
+
+        if (response.status === 401) {
+          const refreshed = await refreshTokens();
+          if (refreshed) {
+            const freshToken = localStorage.getItem("access_token");
+            response = await fetch(`${API_URL}/Client/me`, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${freshToken}`
+              }
+            });
+          }
+        }
+
+        if (response.ok) {
+          const profile = await response.json();
+          if (profile?.email) {
+            setEmail(prev => prev || profile.email);
+          }
+          if (profile?.name) {
+            const parts = profile.name.trim().split(/\s+/);
+            if (parts.length >= 2) {
+              setFirstName(prev => prev || parts[0]);
+              setLastName(prev => prev || parts.slice(1).join(" "));
+            } else if (parts.length === 1 && parts[0]) {
+              setFirstName(prev => prev || parts[0]);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Profile fetch error in checkout:", err);
+      }
+    };
+
+    loadUserData();
+
+    const handleAuthChange = () => {
+      loadUserData();
+    };
+    window.addEventListener("authChanged", handleAuthChange);
+    return () => window.removeEventListener("authChanged", handleAuthChange);
   }, []);
 
   // Применение промокода
