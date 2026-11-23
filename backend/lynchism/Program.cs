@@ -118,6 +118,9 @@ using (var scope = app.Services.CreateScope())
         await _context.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Products"" ADD COLUMN IF NOT EXISTS ""SizeChartJson"" text;");
         await _context.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Products"" ADD COLUMN IF NOT EXISTS ""ColorsJson"" text;");
         await _context.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Products"" ADD COLUMN IF NOT EXISTS ""IsPreOrder"" boolean DEFAULT false;");
+        await _context.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Products"" ADD COLUMN IF NOT EXISTS ""OldPrice"" numeric;");
+        await _context.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Products"" ADD COLUMN IF NOT EXISTS ""IsNew"" boolean DEFAULT false;");
+        await _context.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Products"" ADD COLUMN IF NOT EXISTS ""NewUntil"" timestamp with time zone;");
         await _context.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""Products"" ADD COLUMN IF NOT EXISTS ""Gender"" text DEFAULT 'Unisex';");
         await _context.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""CartItems"" ADD COLUMN IF NOT EXISTS ""Color"" text DEFAULT '';");
         await _context.Database.ExecuteSqlRawAsync(@"ALTER TABLE ""OrderItems"" ADD COLUMN IF NOT EXISTS ""Color"" text DEFAULT '';");

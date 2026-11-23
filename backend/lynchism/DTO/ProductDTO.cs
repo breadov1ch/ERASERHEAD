@@ -17,6 +17,9 @@ namespace lynchism.DTO
         public string? SizeChartJson { get; set; }
         public string? ColorsJson { get; set; }
         public bool IsPreOrder { get; set; } = false;
+        public decimal? OldPrice { get; set; }
+        public bool IsNew { get; set; } = false;
+        public DateTime? NewUntil { get; set; }
         public List<ProductSize>? Sizes { get; set; }
     }
 }

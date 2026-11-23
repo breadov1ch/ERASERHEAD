@@ -63,6 +63,10 @@ export default function CreateProduct() {
     category: 'Tops',
     gender: 'Unisex',
     price: 3200,
+    oldPrice: '',
+    isNew: true,
+    newDurationDays: '14',
+    newUntil: '',
     description: '',
     silhouette: 'OVERSIZED',
     fabric: '100% COTTON 480 GSM',
@@ -126,7 +130,7 @@ export default function CreateProduct() {
     const { name, value } = e.target;
     setProduct(prev => ({
       ...prev,
-      [name]: name === 'price' ? parseFloat(value) || 0 : value
+      [name]: (name === 'price' || name === 'oldPrice') ? (value === '' ? '' : parseFloat(value) || 0) : value
     }));
     if (name === 'category') {
       const lower = value.toLowerCase();
@@ -269,8 +273,20 @@ export default function CreateProduct() {
       rows: chartRows
     };
 
+    let finalNewUntil = null;
+    if (product.isNew) {
+      if (product.newDurationDays && product.newDurationDays !== 'permanent') {
+        const days = parseInt(product.newDurationDays, 10) || 14;
+        finalNewUntil = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+      }
+    }
+
     const payload = {
       ...product,
+      price: parseFloat(product.price) || 0,
+      oldPrice: product.oldPrice ? parseFloat(product.oldPrice) : null,
+      isNew: Boolean(product.isNew),
+      newUntil: finalNewUntil,
       imageURL: product.images[0] || product.imageURL || '',
       images: product.images.length > 0 ? product.images : (product.imageURL ? [product.imageURL] : []),
       sizes: sizes,
@@ -451,6 +467,37 @@ export default function CreateProduct() {
               </div>
 
               <div className="space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                    Старая цена (₴ UAH, байт на скидку)
+                  </label>
+                  {product.oldPrice && parseFloat(product.oldPrice) > parseFloat(product.price) && (
+                    <span className="text-[10px] font-bold text-red-400 bg-red-950/60 border border-red-800/80 px-2 py-0.5">
+                      Скидка -{Math.round(((parseFloat(product.oldPrice) - parseFloat(product.price)) / parseFloat(product.oldPrice)) * 100)}% (экономия {Math.round(parseFloat(product.oldPrice) - parseFloat(product.price))} ₴)
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    name="oldPrice"
+                    value={product.oldPrice || ''}
+                    onChange={handleFieldChange}
+                    placeholder="Например: 3900 (если скидки нет — оставьте пустым)"
+                    className="w-full bg-black border border-zinc-800 px-3.5 py-2.5 text-xs text-white outline-none focus:border-zinc-500 font-mono pr-14"
+                  />
+                  <span className="absolute right-3.5 top-2.5 text-xs text-zinc-400 font-mono font-bold">
+                    ₴ UAH
+                  </span>
+                </div>
+                <span className="text-[10px] text-zinc-500 font-mono block">
+                  Если заполнена и выше цены — старая цена будет зачеркнута красным на сайте, а на карточке появится бейдж скидки.
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">Силуэт / Крой</label>
                 <input
                   type="text"
@@ -505,6 +552,61 @@ export default function CreateProduct() {
                     </span>
                   </div>
                 </label>
+              </div>
+
+              {/* Плашка НОВОЕ (NEW DROP) и настройка срока активности */}
+              <div className="md:col-span-2 p-4 bg-[#141414] border border-zinc-700 space-y-3 font-mono">
+                <label className="flex items-start sm:items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="isNew"
+                    checked={Boolean(product.isNew)}
+                    onChange={(e) => setProduct(prev => ({ ...prev, isNew: e.target.checked }))}
+                    className="w-4 h-4 mt-0.5 sm:mt-0 accent-white cursor-pointer"
+                  />
+                  <div>
+                    <span className="text-xs font-black uppercase tracking-wider text-white block">
+                      ★ Плашка «НОВОЕ» (NEW DROP) на карточке товара
+                    </span>
+                    <span className="text-[11px] text-zinc-400 font-mono block mt-0.5">
+                      Отображает стильный бейдж [NEW] на карточке товара в каталоге и на странице товара.
+                    </span>
+                  </div>
+                </label>
+
+                {product.isNew && (
+                  <div className="pl-7 pt-2 border-t border-zinc-800/80 space-y-3">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-300 block">
+                      Срок активности плашки:
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {[
+                        { key: '7', label: '7 ДНЕЙ' },
+                        { key: '14', label: '14 ДНЕЙ' },
+                        { key: '30', label: '30 ДНЕЙ' },
+                        { key: 'permanent', label: 'БЕССРОЧНО' }
+                      ].map(item => (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => setProduct(prev => ({ ...prev, newDurationDays: item.key }))}
+                          className={`py-2 px-3 text-xs font-bold uppercase border transition-colors cursor-pointer text-center ${
+                            product.newDurationDays === item.key
+                              ? 'bg-white text-black border-white'
+                              : 'bg-black text-zinc-400 border-zinc-800 hover:border-zinc-600 hover:text-white'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-zinc-500 font-mono">
+                      {product.newDurationDays === 'permanent'
+                        ? 'Плашка будет активна постоянно, пока вы не отключите ее вручную.'
+                        : `Плашка автоматически исчезнет через ${product.newDurationDays || 14} дн. без необходимости вручную заходить в админку.`}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

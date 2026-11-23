@@ -43,6 +43,12 @@ export const isProductMatchingCategory = (product, catKey) => {
   return pCatLower === catLower;
 };
 
+export const isProductNew = (product) => {
+  if (!product || !product.isNew) return false;
+  if (!product.newUntil) return true;
+  return new Date(product.newUntil).getTime() > Date.now();
+};
+
 const PLACEHOLDER_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800" fill="%23111111"><rect width="600" height="800" fill="%23111111"/><line x1="0" y1="0" x2="600" y2="800" stroke="%23222222" stroke-width="1"/><line x1="600" y1="0" x2="0" y2="800" stroke="%23222222" stroke-width="1"/><rect x="150" y="375" width="300" height="50" fill="%23161616" stroke="%23333333"/><text x="300" y="406" font-family="monospace" font-size="13" fill="%23888888" font-weight="bold" text-anchor="middle" letter-spacing="4">ERASERHEAD ARCHIVE</text></svg>`;
 
 export default function Catalog() {
@@ -61,6 +67,11 @@ export default function Catalog() {
   const [wishlistState, setWishlistState] = useState(getWishlist());
   const [isScrolled, setIsScrolled] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+
+  // Умная пагинация (порционная подгрузка)
+  const BATCH_SIZE = 12;
+  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
+  const loadMoreRef = React.useRef(null);
 
   useEffect(() => {
     const qCategory = searchParams.get("category");
@@ -220,6 +231,27 @@ export default function Catalog() {
   const sortedProducts = [...filteredProducts].sort((a, b) =>
     minOfMax === 1 ? a.price - b.price : b.price - a.price
   );
+
+  // Сбрасываем видимое количество товаров при изменении фильтров
+  useEffect(() => {
+    setVisibleCount(BATCH_SIZE);
+  }, [gender, category, size, searchQuery, value, minOfMax, showSavedOnly]);
+
+  // Автоподгрузка следующей порции при приближении скролла
+  useEffect(() => {
+    const sentinel = loadMoreRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setVisibleCount((prev) => Math.min(prev + BATCH_SIZE, sortedProducts.length));
+      }
+    }, { rootMargin: '350px' });
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [sortedProducts.length]);
+
+  const displayedProducts = sortedProducts.slice(0, visibleCount);
 
   const genderTabs = [
     { key: "All", label: t("gender_all") || loc("Всі", "All", "Все") },
@@ -879,7 +911,7 @@ export default function Catalog() {
               </div>
             </div>
           ) : (
-            sortedProducts.map(product => {
+            displayedProducts.map(product => {
               const safeImg = (url) => (!url || url.includes('ibb.co')) ? PLACEHOLDER_SVG : url;
               const primaryImg = safeImg(product.imageURL || (product.images && product.images[0]));
               const secondaryImg = (product.images && product.images.length > 1) ? safeImg(product.images[1]) : null;
@@ -891,6 +923,25 @@ export default function Catalog() {
                   onClick={() => navigate(`/product/${product.id}`)}
                   className="group bg-[#181818] border border-zinc-800 rounded-none p-2 sm:p-4 hover:border-zinc-500 cursor-pointer flex flex-col justify-between relative shadow-md product-card-interactive animate-fade-in-up"
                 >
+                  {/* Плашки товара: НОВОЕ, СКИДКА, ПРЕДЗАКАЗ */}
+                  <div className="absolute top-2.5 left-2.5 sm:top-3.5 sm:left-3.5 z-20 flex flex-col gap-1 items-start pointer-events-none">
+                    {isProductNew(product) && (
+                      <span className="px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider font-mono bg-white text-black border border-white shadow-md">
+                        {loc('НОВЕ', 'NEW', 'НОВОЕ')}
+                      </span>
+                    )}
+                    {product.oldPrice && Number(product.oldPrice) > Number(product.price) && (
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold font-mono bg-red-950/90 text-red-400 border border-red-700/80 shadow-md tracking-wider">
+                        -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}%
+                      </span>
+                    )}
+                    {product.isPreOrder && (
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider font-mono bg-black/90 text-amber-300 border border-amber-500/70 shadow-md">
+                        ★ {loc('ПРЕДЗАМОВЛЕННЯ', 'PRE-ORDER', 'ПРЕДЗАКАЗ')}
+                      </span>
+                    )}
+                  </div>
+
                   {/* Кнопка избранного в углу товара */}
                   <div className="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 z-20">
                     <button
@@ -963,15 +1014,22 @@ export default function Catalog() {
                     </div>
                   </div>
 
-                  {/* Название, цена и категория (Четкий расчет: цена никогда не рвется на 2 строки, название помещается целиком) */}
+                  {/* Название, цена и категория (с перечеркнутой старой ценой в красном) */}
                   <div className="mt-2.5 sm:mt-3 space-y-1">
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start justify-between gap-1.5">
                       <h2 className="font-bold text-xs sm:text-sm text-white tracking-tight line-clamp-2 group-hover:text-zinc-200 flex-1 leading-snug">
                         {product.name}
                       </h2>
-                      <span className="text-xs sm:text-sm font-bold text-white font-mono shrink-0 whitespace-nowrap pl-1">
-                        {formatPrice(product.price)}
-                      </span>
+                      <div className="flex items-baseline gap-1.5 shrink-0 whitespace-nowrap pl-1 font-mono">
+                        {product.oldPrice && Number(product.oldPrice) > Number(product.price) && (
+                          <span className="text-[10px] sm:text-[11px] font-bold line-through text-red-500/90">
+                            {formatPrice(product.oldPrice)}
+                          </span>
+                        )}
+                        <span className="text-xs sm:text-sm font-bold text-white">
+                          {formatPrice(product.price)}
+                        </span>
+                      </div>
                     </div>
                     <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-mono truncate min-w-0 pt-0.5 border-t border-zinc-800/40">
                       <span className="text-zinc-300 font-bold uppercase shrink-0">
@@ -989,6 +1047,40 @@ export default function Catalog() {
             })
           )}
         </div>
+
+            {/* Пагинация / Умная подгрузка следующей пачки товаров */}
+            {displayedProducts.length < sortedProducts.length && (
+              <div className="pt-8 pb-4 text-center space-y-3 font-mono">
+                <div className="flex items-center justify-center gap-3 text-xs text-zinc-400">
+                  <span>
+                    {loc('Показано', 'Showing', 'Показано')}{' '}
+                    <strong className="text-white">{displayedProducts.length}</strong>{' '}
+                    {loc('з', 'of', 'из')}{' '}
+                    <strong className="text-white">{sortedProducts.length}</strong>
+                  </span>
+                  <div className="w-28 sm:w-40 h-1 bg-zinc-800 rounded-none overflow-hidden">
+                    <div
+                      className="h-full bg-white transition-all duration-300"
+                      style={{
+                        width: `${Math.min(100, Math.round((displayedProducts.length / sortedProducts.length) * 100))}%`
+                      }}
+                    />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClickSound();
+                    setVisibleCount(prev => prev + BATCH_SIZE);
+                  }}
+                  className="px-8 py-3.5 border border-zinc-700 hover:border-white bg-[#111111] hover:bg-white text-zinc-200 hover:text-black text-xs font-black uppercase tracking-widest transition-all cursor-pointer btn-press shadow-lg"
+                >
+                  + {loc(`ПОКАЗАТИ ЩЕ (+${Math.min(BATCH_SIZE, sortedProducts.length - displayedProducts.length)})`, `LOAD MORE (+${Math.min(BATCH_SIZE, sortedProducts.length - displayedProducts.length)})`, `ПОКАЗАТЬ ЕЩЁ (+${Math.min(BATCH_SIZE, sortedProducts.length - displayedProducts.length)})`)}
+                </button>
+                {/* Sentinel для автоматической подгрузки при скролле */}
+                <div ref={loadMoreRef} className="h-6 w-full pointer-events-none" />
+              </div>
+            )}
 
           </div>
         </div>

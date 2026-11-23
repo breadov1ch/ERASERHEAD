@@ -62,6 +62,10 @@ export default function ChangeProduct() {
     name: '',
     description: '',
     price: 0,
+    oldPrice: '',
+    isNew: false,
+    newDurationDays: '14',
+    newUntil: '',
     category: 'Tops',
     gender: 'Unisex',
     silhouette: 'OVERSIZED',
@@ -118,8 +122,23 @@ export default function ChangeProduct() {
       }
 
       const data = await response.json();
+      const isNewActive = Boolean(data.isNew && (!data.newUntil || new Date(data.newUntil) > new Date()));
+      let daysRemaining = '14';
+      if (data.newUntil) {
+        const diffMs = new Date(data.newUntil) - new Date();
+        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        if (diffDays > 0) {
+          daysRemaining = String(diffDays);
+        }
+      } else if (data.isNew && !data.newUntil) {
+        daysRemaining = 'permanent';
+      }
+
       setProduct({
         ...data,
+        oldPrice: data.oldPrice ?? '',
+        isNew: isNewActive,
+        newDurationDays: daysRemaining,
         gender: data.gender || 'Unisex',
         isPreOrder: Boolean(data.isPreOrder),
         images: data.images || (data.imageURL ? [data.imageURL] : []),
@@ -178,7 +197,7 @@ export default function ChangeProduct() {
     const { name, value } = e.target;
     setProduct(prev => ({ 
       ...prev, 
-      [name]: name === 'price' ? parseFloat(value) || 0 : value 
+      [name]: (name === 'price' || name === 'oldPrice') ? (value === '' ? '' : parseFloat(value) || 0) : value 
     }));
   };
 
@@ -301,8 +320,20 @@ export default function ChangeProduct() {
       rows: chartRows
     };
 
+    let finalNewUntil = null;
+    if (product.isNew) {
+      if (product.newDurationDays && product.newDurationDays !== 'permanent') {
+        const days = parseInt(product.newDurationDays, 10) || 14;
+        finalNewUntil = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+      }
+    }
+
     const payload = {
       ...product,
+      price: parseFloat(product.price) || 0,
+      oldPrice: product.oldPrice ? parseFloat(product.oldPrice) : null,
+      isNew: Boolean(product.isNew),
+      newUntil: finalNewUntil,
       imageURL: product.images[0] || product.imageURL || '',
       images: product.images.length > 0 ? product.images : (product.imageURL ? [product.imageURL] : []),
       sizes: product.sizes,
@@ -456,9 +487,11 @@ export default function ChangeProduct() {
                 </div>
 
                 <div>
-                  <label className="text-xs text-zinc-300 font-mono block mb-1">
-                    Цена (₴ UAH, грн) *
-                  </label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-xs text-zinc-300 font-mono">
+                      Цена (₴ UAH, грн) *
+                    </label>
+                  </div>
                   <div className="relative">
                     <input
                       type="number"
@@ -476,9 +509,41 @@ export default function ChangeProduct() {
                     </span>
                   </div>
                   <span className="text-[10px] text-zinc-500 font-mono mt-1 block">
-                    Базовая цена в гривнах (UAH)
+                    Текущая цена для продажи
                   </span>
                 </div>
+              </div>
+
+              {/* Старая цена для скидки */}
+              <div className="border border-zinc-800 p-3 bg-[#111111]">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-xs text-zinc-300 font-mono">
+                    Старая цена (₴ UAH, байт на скидку)
+                  </label>
+                  {product.oldPrice && parseFloat(product.oldPrice) > parseFloat(product.price) && (
+                    <span className="text-[10px] font-bold text-red-400 bg-red-950/60 border border-red-800/80 px-2 py-0.5">
+                      Скидка -{Math.round(((parseFloat(product.oldPrice) - parseFloat(product.price)) / parseFloat(product.oldPrice)) * 100)}% (экономия {Math.round(parseFloat(product.oldPrice) - parseFloat(product.price))} ₴)
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    name="oldPrice"
+                    min="0"
+                    step="1"
+                    value={product.oldPrice || ''}
+                    onChange={handleChange}
+                    placeholder="Например: 3900 (если скидки нет — оставьте пустым)"
+                    className="w-full bg-black border border-zinc-800 p-2.5 text-xs text-white font-mono outline-none focus:border-zinc-500 pr-14"
+                  />
+                  <span className="absolute right-3 top-2.5 text-xs text-zinc-400 font-mono font-bold">
+                    ₴ UAH
+                  </span>
+                </div>
+                <span className="text-[10px] text-zinc-500 font-mono mt-1 block">
+                  Если указана и выше текущей цены — на сайте старая цена будет зачеркнута красным и появится ярлык скидки.
+                </span>
               </div>
             </div>
 
@@ -538,6 +603,61 @@ export default function ChangeProduct() {
                   </span>
                 </div>
               </label>
+            </div>
+
+            {/* Плашка НОВОЕ (NEW DROP) и настройка срока активности */}
+            <div className="p-4 bg-[#141414] border border-zinc-700 space-y-3 font-mono">
+              <label className="flex items-start sm:items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="isNew"
+                  checked={Boolean(product.isNew)}
+                  onChange={(e) => setProduct(prev => ({ ...prev, isNew: e.target.checked }))}
+                  className="w-4 h-4 mt-0.5 sm:mt-0 accent-white cursor-pointer"
+                />
+                <div>
+                  <span className="text-xs font-black uppercase tracking-wider text-white block">
+                    ★ Плашка «НОВОЕ» (NEW DROP) на карточке товара
+                  </span>
+                  <span className="text-[11px] text-zinc-400 font-mono block mt-0.5">
+                    Отображает бейдж [NEW] на карточке товара в каталоге и на странице товара.
+                  </span>
+                </div>
+              </label>
+
+              {product.isNew && (
+                <div className="pl-7 pt-2 border-t border-zinc-800/80 space-y-3">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-300 block">
+                    Срок активности плашки:
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { key: '7', label: '7 ДНЕЙ' },
+                      { key: '14', label: '14 ДНЕЙ' },
+                      { key: '30', label: '30 ДНЕЙ' },
+                      { key: 'permanent', label: 'БЕССРОЧНО' }
+                    ].map(item => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => setProduct(prev => ({ ...prev, newDurationDays: item.key }))}
+                        className={`py-2 px-3 text-xs font-bold uppercase border transition-colors cursor-pointer text-center ${
+                          product.newDurationDays === item.key
+                            ? 'bg-white text-black border-white'
+                            : 'bg-black text-zinc-400 border-zinc-800 hover:border-zinc-600 hover:text-white'
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-zinc-500 font-mono">
+                    {product.newDurationDays === 'permanent'
+                      ? 'Плашка будет активна постоянно, пока вы не отключите ее вручную.'
+                      : `Плашка автоматически исчезнет через ${product.newDurationDays || 14} дн. без необходимости вручную заходить в админку.`}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

@@ -504,6 +504,25 @@ export default function ProductPage({ updateCart }) {
             className={`w-full aspect-[3/4] max-h-[580px] bg-[#111111] border border-zinc-700 rounded-none relative overflow-hidden group shadow-xl select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'
               }`}
           >
+            {/* Плашки на фото товара: НОВОЕ, СКИДКА, ПРЕДЗАКАЗ */}
+            <div className="absolute top-3 left-3 z-20 flex flex-col gap-1.5 items-start pointer-events-none font-mono">
+              {product?.isNew && (!product?.newUntil || new Date(product.newUntil).getTime() > Date.now()) && (
+                <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-white text-black border border-white shadow-md">
+                  {loc('НОВЕ', 'NEW', 'НОВОЕ')}
+                </span>
+              )}
+              {product?.oldPrice && Number(product.oldPrice) > Number(product.price) && (
+                <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-bold bg-red-950/90 text-red-400 border border-red-700/80 shadow-md tracking-wider">
+                  -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}%
+                </span>
+              )}
+              {product?.isPreOrder && (
+                <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider bg-black/90 text-amber-300 border border-amber-500/70 shadow-md">
+                  ★ {loc('ПРЕДЗАМОВЛЕННЯ', 'PRE-ORDER', 'ПРЕДЗАКАЗ')}
+                </span>
+              )}
+            </div>
+
             {/* Горизонтальная анимированная лента слайдов */}
             <div
               className="flex h-full w-full will-change-transform"
@@ -613,15 +632,25 @@ export default function ProductPage({ updateCart }) {
         <div className="bg-[#181818] border border-zinc-700 rounded-none p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6 shadow-xl w-full min-w-0 overflow-hidden">
 
           <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2 border-b border-zinc-800">
-            <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-none bg-white text-black uppercase tracking-widest font-mono shrink-0">
+            <div className="flex flex-wrap items-center gap-1.5 min-w-0 font-mono">
+              {product?.isNew && (!product?.newUntil || new Date(product.newUntil).getTime() > Date.now()) && (
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-none bg-white text-black uppercase tracking-widest shrink-0 shadow-sm">
+                  {loc('НОВЕ', 'NEW', 'НОВОЕ')}
+                </span>
+              )}
+              {product?.oldPrice && Number(product.oldPrice) > Number(product.price) && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-none bg-red-950/90 text-red-400 border border-red-700/80 uppercase tracking-widest shrink-0 shadow-sm">
+                  -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}% SALE
+                </span>
+              )}
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-none bg-zinc-800 text-zinc-200 uppercase tracking-widest shrink-0">
                 {product?.gender === 'Men' ? (t("gender_men") || loc('ЧОЛОВІЧЕ', 'MEN', 'МУЖСКОЕ')) : product?.gender === 'Women' ? (t("gender_women") || loc('ЖІНОЧЕ', 'WOMEN', 'ЖЕНСКОЕ')) : (t("gender_unisex") || loc('УНІСЕКС', 'UNISEX', 'УНИСЕКС'))}
               </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-none bg-[#121212] text-zinc-300 uppercase tracking-widest border border-zinc-700 font-mono shrink-0">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-none bg-[#121212] text-zinc-300 uppercase tracking-widest border border-zinc-700 shrink-0">
                 {product?.category || t("product_category_default")}
               </span>
               {product?.isPreOrder && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-none bg-black text-zinc-300 uppercase tracking-widest border border-zinc-700 font-mono shrink-0">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-none bg-black text-amber-300 uppercase tracking-widest border border-amber-500/70 shrink-0">
                   ★ {loc('ПЕРЕДЗАМОВЛЕННЯ', 'PRE-ORDER', 'ПРЕДЗАКАЗ')}
                 </span>
               )}
@@ -660,14 +689,29 @@ export default function ProductPage({ updateCart }) {
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight leading-tight break-words">
               {product?.name}
             </h1>
-            <div className="mt-2.5 sm:mt-3 flex items-baseline gap-3 flex-wrap">
+            <div className="mt-2.5 sm:mt-3 flex items-baseline gap-3 flex-wrap font-mono">
+              {product?.oldPrice && Number(product.oldPrice) > Number(product.price) && (
+                <span className="text-base sm:text-lg lg:text-xl font-bold line-through text-red-500/90 shrink-0">
+                  {formatPrice(product.oldPrice)}
+                </span>
+              )}
               <span className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white shrink-0 whitespace-nowrap">
                 {product ? formatPrice(product.price) : ""}
               </span>
+              {product?.oldPrice && Number(product.oldPrice) > Number(product.price) && (
+                <span className="px-2 py-0.5 text-[10px] sm:text-xs font-bold bg-red-950/80 text-red-400 border border-red-600/70 uppercase tracking-wider">
+                  -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}%
+                </span>
+              )}
               <span className="text-xs text-zinc-400">
                 {t("product_taxes_included")}
               </span>
             </div>
+            {product?.oldPrice && Number(product.oldPrice) > Number(product.price) && (
+              <p className="text-[11px] text-zinc-400 font-mono mt-1">
+                {loc('Ви заощаджуєте', 'You save', 'Вы экономите')}: <strong className="text-emerald-400 font-bold">{formatPrice(product.oldPrice - product.price)}</strong>
+              </p>
+            )}
           </div>
 
           <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed whitespace-pre-line break-words">

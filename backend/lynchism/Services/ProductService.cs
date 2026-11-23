@@ -112,6 +112,9 @@ namespace lynchism.Services
                 }
                 finded_product.ColorsJson = product.ColorsJson;
                 finded_product.IsPreOrder = product.IsPreOrder;
+                finded_product.OldPrice = product.OldPrice;
+                finded_product.IsNew = product.IsNew;
+                finded_product.NewUntil = product.NewUntil;
 
                 EnsureImagesAndAttributes(finded_product);
 
